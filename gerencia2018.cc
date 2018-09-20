@@ -22,6 +22,8 @@
 #include "ns3/flow-monitor.h"
 #include "ns3/flow-monitor-helper.h"
 
+#include "ns3/gnuplot.h"
+
 // Default Network Topology
 //
 //		Wifi 10.1.1.0
@@ -37,29 +39,71 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("projetoGerencia2018");
 
+void ThroughputMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2dDataset dataset){
+
+  double tempThroughput = 0.0;
+  monitor->CheckForLostPackets(); 
+  std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats();
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier());
+
+  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator stats = flowStats.begin (); stats != flowStats.end (); ++stats){ 
+      tempThroughput = (stats->second.rxBytes * 8.0 / (stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds())/1024);
+      dataset.Add((double)Simulator::Now().GetSeconds(), (double)tempThroughput);
+  }
+  
+  //Tempo que será iniciado
+  Simulator::Schedule(Seconds(1),&ThroughputMonitor, fmhelper, monitor, dataset);
+}
+
+void DelayMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2dDataset dataset1){
+  
+  double delay = 0.0;
+  monitor->CheckForLostPackets(); 
+  std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats();
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier());
+
+  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator stats = flowStats.begin (); stats != flowStats.end (); ++stats){ 
+      //Ipv4FlowClassifier::FiveTuple fiveTuple = classifier->FindFlow (stats->first);
+      delay = stats->second.delaySum.GetSeconds ();
+      dataset1.Add((double)Simulator::Now().GetSeconds(), (double)delay);
+    }
+  
+  //Tempo que será iniciado
+  Simulator::Schedule(Seconds(1),&DelayMonitor, fmhelper, monitor, dataset1);
+}
+
 void ImprimeMetricas (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor){
   double tempThroughput = 0.0;
   monitor->CheckForLostPackets(); 
   std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats();
   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier());
+
+// .host[82].nic.mac1609_4   TotalLostPackets  0
+// scalar VANET.host[82].nic.mac1609_4   DroppedPacketsInMac   0
+// scalar VANET.host[82].nic.mac1609_4   TooLittleTime   0
+// scalar VANET.host[82].nic.mac1609_4   TimesIntoBackoff  106
+// scalar VANET.host[82].nic.mac1609_4   SlotsBackoff  171
+// scalar VANET.host[82].nic.mac1609_4   NumInternalContention   0
+// scalar VANET.host[82].nic.mac1609_4   totalBusyTime   0.113128999995
+
  
   std::cout<<"\n"<<std::endl;
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator stats = flowStats.begin (); stats != flowStats.end (); ++stats){ 
       // A tuple: Source-ip, destination-ip, protocol, source-port, destination-port
       Ipv4FlowClassifier::FiveTuple fiveTuple = classifier->FindFlow (stats->first);
-    
-      std::cout<<"Flow ID: " << stats->first <<" - "<< fiveTuple.sourceAddress <<" -----> "<<fiveTuple.destinationAddress<<std::endl;
-      std::cout<<"Tx Packets = " << stats->second.txPackets<<std::endl;
-      std::cout<<"Rx Packets = " << stats->second.rxPackets<<std::endl;
-      std::cout<<"Duration: " <<stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds()<<std::endl;
-      std::cout<<"Last Received Packet: "<< stats->second.timeLastRxPacket.GetSeconds()<<" Seconds"<<std::endl;
+      //controle
+      std::string flowidhost = "FlowID[" + std::to_string(stats->first) + "]";
+      std::cout << flowidhost <<"   Flow   "<< fiveTuple.sourceAddress <<" -----> "<<fiveTuple.destinationAddress<<std::endl;
+      std::cout << flowidhost <<"   TxPackets   " << stats->second.txPackets<<std::endl;
+      std::cout << flowidhost <<"   RxPackets   " << stats->second.rxPackets<<std::endl;
+      std::cout << flowidhost <<"   Duration   " <<stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds()<<std::endl;
+      std::cout << flowidhost <<"   LastReceivedPacket(s)   "<< stats->second.timeLastRxPacket.GetSeconds()<<std::endl;
       tempThroughput = (stats->second.rxBytes * 8.0 / (stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds())/1024/1024);
-      std::cout<<"Throughput: "<< tempThroughput <<" Mbps"<<std::endl;
-      std::cout<< "Delay: " << stats->second.delaySum.GetSeconds () << std::endl;
-      //std::cout<< "LostPackets: " << stats->second.lostPackets << std::endl;
-      std::cout<< "Jitter: " << stats->second.jitterSum.GetSeconds () << std::endl;
-      //std::cout<<"Last Received Packet: "<< stats->second.timeLastRxPacket.GetSeconds()<<" Seconds ---->" << " Throughput: " << tempThroughput << " Kbps" << std::endl;
-      std::cout<<"------------------------------------------"<<std::endl;
+      std::cout << flowidhost <<"   Throughput(Mbps)   "<< tempThroughput<<std::endl;
+      std::cout << flowidhost <<"   Delay   " << stats->second.delaySum.GetSeconds () << std::endl;
+      std::cout << flowidhost <<"   LostPackets   " << stats->second.lostPackets << std::endl;
+      std::cout << flowidhost <<"   Jitter   " << stats->second.jitterSum.GetSeconds () << std::endl;
+      //std::cout<<"------------------------------------------"<<std::endl;
     }
   
   //Tempo que será iniciado
@@ -83,7 +127,7 @@ int main (int argc, char *argv[])
   cmd.AddValue ("seed", "Semente de simulação", seed);
   cmd.AddValue ("nWifi", "Número de nós CLIENTES", nWifi);
   cmd.AddValue ("nApWifi", "Número de APs", apWifi);
-  cmd.AddValue ("verbose", "Gerar log das aplicações", verbose);
+  cmd.AddValue ("verbose", "Gerar log das transmissoes", verbose);
   cmd.AddValue ("tracing", "Ativar rastreio PCAP", tracing);
   cmd.AddValue ("trafego", "(0) UDP, (1) TCP ou (2) para ambos", trafego);
   cmd.Parse (argc,argv);
@@ -92,11 +136,6 @@ int main (int argc, char *argv[])
     {
       std::cout << "Muitos nós wifi criados. Nosso limite é 250." << std::endl;
       return 1;
-    }
-
-  if (verbose)
-    {
-      LogComponentEnable ("OnOffApplication", LOG_LEVEL_INFO);
     }
 
 //Cria apenas nós WiFi
@@ -205,12 +244,62 @@ for (uint32_t i = 0; i < wifiStaNodes.GetN(); i++){
   anim.EnablePacketMetadata ();
 
   Simulator::Stop (Seconds (17.0));
+
+  std::string tipo = "resultados/";
+
+  //Throughput
+    std::string vazao = tipo + "Vazao";
+    std::string graphicsFileName        = "Vazao.eps";
+    std::string plotFileName            = vazao + ".plt";
+    std::string plotTitle               = "Fluxo vs Vazao";
+    std::string dataTitle               = "Vazao";
+
+    Gnuplot gnuplot (graphicsFileName);
+    gnuplot.SetTitle (plotTitle);
+    gnuplot.SetTerminal ("eps");
+    gnuplot.SetLegend ("Fluxo", "Vazao (Kbps)");
+
+    Gnuplot2dDataset dataset;
+    dataset.SetTitle (dataTitle);
+    dataset.SetStyle (Gnuplot2dDataset::LINES_POINTS);
+
+  //Delay
+    std::string delay = tipo + "Atraso";
+    std::string graphicsFileName1        = "Atraso.eps";
+    std::string plotFileName1            = delay + ".plt";
+    std::string plotTitle1               = "Flow vs Atraso";
+    std::string dataTitle1               = "Atraso";
+
+    Gnuplot gnuplot1 (graphicsFileName1);
+    gnuplot1.SetTitle (plotTitle1);
+    gnuplot1.SetTerminal ("eps");
+    gnuplot1.SetLegend ("Flow", "Atraso");
+
+    Gnuplot2dDataset dataset1;
+    dataset1.SetTitle (dataTitle1);
+    dataset1.SetStyle (Gnuplot2dDataset::LINES_POINTS);
+
+//Chama a captura de fluxo
+    ThroughputMonitor (&fmhelper, monitor, dataset);
+    DelayMonitor (&fmhelper, monitor, dataset1);
   
   Simulator::Run ();
 
 //Imprime métricas no Terminal
-  ImprimeMetricas (&fmhelper, monitor);
-
+  if (verbose)
+  {
+  	ImprimeMetricas (&fmhelper, monitor);
+  }
+  //Throughput
+    gnuplot.AddDataset (dataset);
+    std::ofstream plotFile (plotFileName.c_str()); // Abre o arquivo.
+    gnuplot.GenerateOutput (plotFile);    //Escreve no arquivo.
+    plotFile.close ();        // fecha o arquivo.
+  //Delay
+    gnuplot1.AddDataset (dataset1);
+    std::ofstream plotFile1 (plotFileName1.c_str()); // Abre o arquivo.
+    gnuplot1.GenerateOutput (plotFile1);    //Escreve no arquivo.
+    plotFile1.close ();        // fecha o arquivo.
 
 //FlowMonitor
   monitor->SerializeToXmlFile("resultados/fluxo_projeto.xml", true, true);
