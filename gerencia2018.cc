@@ -29,15 +29,14 @@
 
 // Default Network Topology
 //
-//		Wifi 10.1.1.0
-//            AP     
-//  *    *    *    *    *
+//     192.168.0.0      AP   10.1.1.0
+//  *    *    *    *    *---------------*r0
 //  |    |    |    |    |
 // s0   s1   a0   s2   s3
 // 
 // Number of wifi nodes can be increased up to 250
 
-// Aplicações UDP, TCP e Ambas
+// Aplicações UDP, TCP e Ambas - OK
 // Porcentagem de nós ativos
 // 
 
@@ -46,38 +45,6 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("projetoGerencia2018");
 
-// void ThroughputMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2dDataset dataset){
-
-//   double tempThroughput = 0.0;
-//   monitor->CheckForLostPackets(); 
-//   std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats();
-//   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier());
-
-//   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator stats = flowStats.begin (); stats != flowStats.end (); ++stats){ 
-//       tempThroughput = (stats->second.rxBytes * 8.0 / (stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds())/1024);
-//       dataset.Add((double)Simulator::Now().GetSeconds(), (double)tempThroughput);
-//   }
-  
-//   //Tempo que será iniciado
-//   Simulator::Schedule(Seconds(1),&ThroughputMonitor, fmhelper, monitor, dataset);
-// }
-
-// void DelayMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2dDataset dataset1){
-  
-//   double delay = 0.0;
-//   monitor->CheckForLostPackets(); 
-//   std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats();
-//   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier());
-
-//   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator stats = flowStats.begin (); stats != flowStats.end (); ++stats){ 
-//       //Ipv4FlowClassifier::FiveTuple fiveTuple = classifier->FindFlow (stats->first);
-//       delay = stats->second.delaySum.GetSeconds ();
-//       dataset1.Add((double)Simulator::Now().GetSeconds(), (double)delay);
-//     }
-  
-//   //Tempo que será iniciado
-//   Simulator::Schedule(Seconds(1),&DelayMonitor, fmhelper, monitor, dataset1);
-// }
 
 void ImprimeMetricas (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, int trafego){
   double tempThroughput = 0.0;
@@ -90,15 +57,15 @@ void ImprimeMetricas (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, int
       // A tuple: Source-ip, destination-ip, protocol, source-port, destination-port
       Ipv4FlowClassifier::FiveTuple fiveTuple = classifier->FindFlow (stats->first);
       //controle
-      std::cout<<std::endl;
+      //std::cout<<std::endl;
       std::string flowidhost = "FlowID[" + std::to_string(stats->first) + "]";
-      if(trafego == 0){
-        std::cout << flowidhost <<"   Trafego   UDP" << std::endl;
-      }else if(trafego == 1){
-        std::cout << flowidhost <<"   Trafego   TCP" << std::endl;
-      }else if(trafego == 2){
-        std::cout << flowidhost <<"   Trafego   UDP/TCP" << std::endl;
-      }
+      // if(trafego == 0){
+      //   std::cout << flowidhost <<"   Trafego   UDP" << std::endl;
+      // }else if(trafego == 1){
+      //   std::cout << flowidhost <<"   Trafego   TCP" << std::endl;
+      // }else if(trafego == 2){
+      //   std::cout << flowidhost <<"   Trafego   UDP/TCP" << std::endl;
+      // }
       std::cout << flowidhost <<"   Flow   "<< fiveTuple.sourceAddress <<" -----> "<<fiveTuple.destinationAddress<<std::endl;
       //std::cout << flowidhost <<"   TxPackets   " << stats->second.txPackets<<std::endl;
       //std::cout << flowidhost <<"   RxPackets   " << stats->second.rxPackets<<std::endl;
@@ -312,7 +279,7 @@ int main (int argc, char *argv[])
   }
   else if(trafego == 1)
   {
-   
+
   }
 
   Simulator::Stop (Seconds (simTime));
