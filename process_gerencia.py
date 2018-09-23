@@ -33,11 +33,11 @@ def build_summary_files():
 				#LostPackets
 				if "LostPackets" in line:
 					lostpackets = line_splited[2]
-					summary_file.write(lostpackets + "\t")
-				#Jitter
-				if "Jitter" in line:
-					jitter = line_splited[2]
-					summary_file.write(jitter + "\n")
+					summary_file.write(lostpackets + "\n")
+				# #Jitter
+				# if "Jitter" in line:
+				# 	jitter = line_splited[2]
+				# 	summary_file.write(jitter + "\n")
 
 			line = result_file.readline()
 		result_file.close()
