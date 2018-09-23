@@ -15,6 +15,9 @@
 #include "ns3/mobility-module.h"
 #include "ns3/internet-module.h"
 
+#include "ns3/csma-module.h"
+#include "ns3/point-to-point-module.h"
+
 #include "ns3/netanim-module.h"
 
 //Monitor de fluxo
@@ -87,6 +90,7 @@ void ImprimeMetricas (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, int
       // A tuple: Source-ip, destination-ip, protocol, source-port, destination-port
       Ipv4FlowClassifier::FiveTuple fiveTuple = classifier->FindFlow (stats->first);
       //controle
+      std::cout<<std::endl;
       std::string flowidhost = "FlowID[" + std::to_string(stats->first) + "]";
       if(trafego == 0){
         std::cout << flowidhost <<"   Trafego   UDP" << std::endl;
@@ -96,15 +100,15 @@ void ImprimeMetricas (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, int
         std::cout << flowidhost <<"   Trafego   UDP/TCP" << std::endl;
       }
       std::cout << flowidhost <<"   Flow   "<< fiveTuple.sourceAddress <<" -----> "<<fiveTuple.destinationAddress<<std::endl;
-      std::cout << flowidhost <<"   TxPackets   " << stats->second.txPackets<<std::endl;
-      std::cout << flowidhost <<"   RxPackets   " << stats->second.rxPackets<<std::endl;
+      //std::cout << flowidhost <<"   TxPackets   " << stats->second.txPackets<<std::endl;
+      //std::cout << flowidhost <<"   RxPackets   " << stats->second.rxPackets<<std::endl;
       std::cout << flowidhost <<"   Duration   " <<stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds()<<std::endl;
-      std::cout << flowidhost <<"   LastReceivedPacket(s)   "<< stats->second.timeLastRxPacket.GetSeconds()<<std::endl;
+      //std::cout << flowidhost <<"   LastReceivedPacket(s)   "<< stats->second.timeLastRxPacket.GetSeconds()<<std::endl;
       tempThroughput = (stats->second.rxBytes * 8.0 / (stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds())/1024/1024);
       std::cout << flowidhost <<"   Throughput(Mbps)   "<< tempThroughput<<std::endl;
       std::cout << flowidhost <<"   Delay   " << stats->second.delaySum.GetSeconds () << std::endl;
       std::cout << flowidhost <<"   LostPackets   " << stats->second.lostPackets << std::endl;
-      std::cout << flowidhost <<"   Jitter   " << stats->second.jitterSum.GetSeconds () << std::endl;
+      //std::cout << flowidhost <<"   Jitter   " << stats->second.jitterSum.GetSeconds () << std::endl;
       //std::cout<<"------------------------------------------"<<std::endl;
     }
   //Tempo que será iniciado
@@ -121,7 +125,7 @@ int main (int argc, char *argv[])
   bool tracing = true; //PCAP
   double distance = 5.0; //Distancia entre os nós
   double simTime = 20.0; //Tempo de simulação
-  int trafego = 1;
+  int trafego = 0;
 
 
   CommandLine cmd;
@@ -143,9 +147,23 @@ int main (int argc, char *argv[])
   NodeContainer wifiStaNodes;
   wifiStaNodes.Create (nWifi);
 
-//Cria o nó AP para WiFi
+//Cria no AP
   NodeContainer wifiApNode;
   wifiApNode.Create (apWifi);
+
+//Cria Router
+  NodeContainer csmaNodes;
+  csmaNodes.Add(wifiApNode.Get(0));
+  csmaNodes.Create (1);
+
+
+//Cria P2P do Router e AP
+  CsmaHelper csma;
+  csma.SetChannelAttribute ("DataRate", StringValue ("100Mbps"));
+  csma.SetChannelAttribute ("Delay", TimeValue (NanoSeconds (6560)));
+
+  NetDeviceContainer csmaDevices;
+  csmaDevices = csma.Install (csmaNodes);
 
 //Cria os nós WiFi e os interliga por meio de um canal
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
@@ -178,6 +196,14 @@ int main (int argc, char *argv[])
   mobilityAp.SetPositionAllocator(positionAlloc0);
   mobilityAp.Install(wifiApNode);
 
+  Ptr<ListPositionAllocator> positionAllocRouter = CreateObject<ListPositionAllocator> ();
+  positionAllocRouter->Add (Vector(0, -10, 0));
+
+  MobilityHelper router;
+  router.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+  router.SetPositionAllocator(positionAllocRouter);
+  router.Install(csmaNodes.Get(1));
+
   //WiFi_nodes
   Ptr<ListPositionAllocator> positionAlloc1 = CreateObject<ListPositionAllocator> ();
   for (uint16_t i = 0; i < wifiStaNodes.GetN(); i++){
@@ -191,10 +217,14 @@ int main (int argc, char *argv[])
 
 //Pilha de Internet
   InternetStackHelper stack;
-  stack.Install (wifiApNode);
+  stack.Install (csmaNodes); //Ja inclue o APnode
   stack.Install (wifiStaNodes);
 
   Ipv4AddressHelper address;
+
+  address.SetBase ("10.1.2.0", "255.255.255.0");
+  Ipv4InterfaceContainer csmaInterfaces = address.Assign (csmaDevices);
+
   //Cria endereço para os Clientes
   address.SetBase ("192.168.0.0", "255.255.255.0");
   Ipv4InterfaceContainer interfacesAp = address.Assign (apDevices);
@@ -211,14 +241,14 @@ int main (int argc, char *argv[])
       uint16_t port = 1000;
       uint16_t m_port = port * i + 1000; //Para alcançar o nó ZERO quando i = 0
 
-      OnOffHelper onoff ("ns3::UdpSocketFactory", Address(InetSocketAddress(interfacesAp.GetAddress(0), m_port)));
+      OnOffHelper onoff ("ns3::UdpSocketFactory", Address(InetSocketAddress(csmaInterfaces.GetAddress(1), m_port)));
       onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), m_port)));
       onoff.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"));
       onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"));
       onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
       onoff.SetAttribute ("PacketSize", UintegerValue (512));
 
-      ApplicationContainer app = onoff.Install(wifiApNode.Get(0));
+      ApplicationContainer app = onoff.Install(csmaNodes.Get(1));
       app.Start(Seconds (1.0));
       app.Stop(Seconds (simTime));
 
@@ -274,20 +304,15 @@ int main (int argc, char *argv[])
   if(trafego == 0)
   {
     AnimationInterface anim ("resultados/Gerencia2018_anim_UDP.xml");
-    for (uint32_t i = 0; i < wifiApNode.GetN (); ++i){
-      anim.UpdateNodeDescription (wifiApNode.Get (i), "AP");
-      anim.UpdateNodeColor (wifiApNode.Get (i), 0, 255, 0);
-    }
+    anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
+    anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
+    anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
+    anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
     anim.EnablePacketMetadata ();    
   }
   else if(trafego == 1)
   {
-    AnimationInterface anim ("resultados/Gerencia2018_anim_TCP.xml");
-    for (uint32_t i = 0; i < wifiApNode.GetN (); ++i){
-      anim.UpdateNodeDescription (wifiApNode.Get (i), "AP");
-      anim.UpdateNodeColor (wifiApNode.Get (i), 0, 255, 0);
-    }
-    anim.EnablePacketMetadata ();    
+   
   }
 
   Simulator::Stop (Seconds (simTime));
