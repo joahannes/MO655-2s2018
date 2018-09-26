@@ -27,6 +27,10 @@
 
 #include "ns3/gnuplot.h"
 
+#include "ns3/rng-seed-manager.h"
+
+#include "ns3/random-variable-stream.h"
+
 // Default Network Topology
 //
 //     192.168.0.0      AP   10.1.1.0
@@ -90,10 +94,10 @@ int main (int argc, char *argv[])
   uint32_t nWifi = 5; //Quantidade de nós WiFi
   uint32_t apWifi = 1; //Quantidade de APs
   bool tracing = true; //PCAP
+  bool mobilidade = false; //Mobilidade
   double distance = 5.0; //Distancia entre os nós
   double simTime = 20.0; //Tempo de simulação
   int trafego = 0;
-
 
   CommandLine cmd;
   cmd.AddValue ("seed", "Semente de simulação", seed);
@@ -102,7 +106,13 @@ int main (int argc, char *argv[])
   cmd.AddValue ("verbose", "Gerar log das transmissoes", verbose);
   cmd.AddValue ("tracing", "Ativar rastreio PCAP", tracing);
   cmd.AddValue ("trafego", "(0) UDP, (1) TCP ou (2) para ambos", trafego);
+  cmd.AddValue ("mobilidade", "Ativar mobilidade nos nós clientes", mobilidade);
   cmd.Parse (argc,argv);
+
+//Seed
+  RngSeedManager::SetSeed(12);
+  RngSeedManager::SetRun(seed);
+  Ptr<UniformRandomVariable> u = CreateObject<UniformRandomVariable> ();
 
   if (nWifi > 250)
     {
@@ -172,15 +182,20 @@ int main (int argc, char *argv[])
   router.Install(csmaNodes.Get(1));
 
   //WiFi_nodes
-  Ptr<ListPositionAllocator> positionAlloc1 = CreateObject<ListPositionAllocator> ();
-  for (uint16_t i = 0; i < wifiStaNodes.GetN(); i++){
-     positionAlloc1->Add (Vector(distance * i + 10, i * 10, 0));
-    }
-
-  MobilityHelper mobilityWifi;
-  mobilityWifi.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-  mobilityWifi.SetPositionAllocator(positionAlloc1);
-  mobilityWifi.Install(wifiStaNodes);
+  if (mobilidade == false)
+  {
+  	Ptr<ListPositionAllocator> positionAlloc1 = CreateObject<ListPositionAllocator> ();
+  	for (uint16_t i = 0; i < wifiStaNodes.GetN(); i++){
+  		positionAlloc1->Add (Vector(distance * i + 10 * u->GetValue(), i * 10, 0));
+  	}
+  	MobilityHelper mobilityWifi;
+  	mobilityWifi.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+	mobilityWifi.SetPositionAllocator(positionAlloc1);
+	mobilityWifi.Install(wifiStaNodes);
+  }
+  else{
+  	//mobilidade aqui
+  }
 
 //Pilha de Internet
   InternetStackHelper stack;
