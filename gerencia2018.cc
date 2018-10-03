@@ -25,9 +25,11 @@
 #include "ns3/random-variable-stream.h"
 
 // Default Network Topology
-//
-//     192.168.0.0      AP   10.1.1.0
-//  *    *    *    *    *---------------*r0
+// 
+//    10.1.1.0
+// r0*--------* AP
+//            
+//  *    *    *    *    * 192.168.0.0 
 //  |    |    |    |    |
 // s0   s1   a0   s2   s3
 // 
@@ -84,7 +86,7 @@ int main (int argc, char *argv[])
   uint32_t apWifi = 1; //Quantidade de APs
   bool tracing = false; //PCAP
   bool mobilidade = false; //Mobilidade
-  double distance = 10.0; //Distancia entre os nós
+  double distance = 5.0; //Distancia entre os nós
   double simTime = 20.0; //Tempo de simulação
   int trafego = 0;
 
@@ -155,7 +157,7 @@ int main (int argc, char *argv[])
 //Instancia a Mobilidade
   //AP_node
   Ptr<ListPositionAllocator> positionAlloc0 = CreateObject<ListPositionAllocator> ();
-  positionAlloc0->Add (Vector(0, 0, 0));
+  positionAlloc0->Add (Vector(12.5, 5, 0));
 
   MobilityHelper mobilityAp;
   mobilityAp.SetMobilityModel("ns3::ConstantPositionMobilityModel");
@@ -163,7 +165,7 @@ int main (int argc, char *argv[])
   mobilityAp.Install(wifiApNode);
 
   Ptr<ListPositionAllocator> positionAllocRouter = CreateObject<ListPositionAllocator> ();
-  positionAllocRouter->Add (Vector(0, -5, 0));
+  positionAllocRouter->Add (Vector(0, 0, 0));
 
   MobilityHelper router;
   router.SetMobilityModel("ns3::ConstantPositionMobilityModel");
@@ -176,9 +178,9 @@ int main (int argc, char *argv[])
     MobilityHelper mobilityWifi;
     mobilityWifi.SetPositionAllocator ("ns3::GridPositionAllocator",
                              "MinX", DoubleValue (0.0),
-                             "MinY", DoubleValue (5.0),
-                             "DeltaX", DoubleValue (distance * u->GetValue()), //Distancia entre os nós em X
-                             "DeltaY", DoubleValue (distance * u->GetValue()), //Distancia entre os nós em Y
+                             "MinY", DoubleValue (10.0),
+                             "DeltaX", DoubleValue (distance), //Distancia entre os nós em X
+                             "DeltaY", DoubleValue (distance), //Distancia entre os nós em Y
                              "GridWidth", UintegerValue (6),
                              "LayoutType", StringValue ("RowFirst"));
     mobilityWifi.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
@@ -188,9 +190,9 @@ int main (int argc, char *argv[])
   	MobilityHelper mobilityWifi;	  
   	mobilityWifi.SetPositionAllocator ("ns3::GridPositionAllocator",
                                  "MinX", DoubleValue (0.0),
-                                 "MinY", DoubleValue (5.0),
-                                 "DeltaX", DoubleValue (distance * u->GetValue()), //Distancia entre os nós em X
-                                 "DeltaY", DoubleValue (distance * u->GetValue()), //Distancia entre os nós em Y
+                                 "MinY", DoubleValue (10.0),
+                                 "DeltaX", DoubleValue (distance), // ADD * u->GetValue() Distancia entre os nós em X
+                                 "DeltaY", DoubleValue (distance), //Distancia entre os nós em Y
                                  "GridWidth", UintegerValue (6),
                                  "LayoutType", StringValue ("RowFirst")); //Determina se as posições são alocadas primeiro linha ou coluna primeiro.
 
@@ -237,7 +239,7 @@ int main (int argc, char *argv[])
       PacketSinkHelper sink ("ns3::UdpSocketFactory", InetSocketAddress(interfacesWifi.GetAddress(i), m_port));
 
       ApplicationContainer sinkApp = sink.Install(wifiStaNodes.Get(i));
-      sinkApp.Start(Seconds (0.0));
+      sinkApp.Start(Seconds (1.0));
       sinkApp.Stop(Seconds (simTime));
     }
   }
@@ -245,9 +247,10 @@ int main (int argc, char *argv[])
     //Aplicacao TCP
     for (uint32_t i = 0; i < wifiStaNodes.GetN(); i++){
       uint16_t sinkPort = 9;
+      uint16_t m_port = sinkPort * i + 1000; //Para alcançar o nó ZERO quando i = 0
 
-      Address sinkAddress (InetSocketAddress(csmaInterfaces.GetAddress(1), sinkPort));
-      PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory",InetSocketAddress(csmaInterfaces.GetAddress(1), sinkPort));
+      Address sinkAddress (InetSocketAddress(csmaInterfaces.GetAddress(1), m_port));
+      PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory",InetSocketAddress(csmaInterfaces.GetAddress(1), m_port));
 
       ApplicationContainer sinkApps = packetSinkHelper.Install(csmaNodes.Get(1));
       sinkApps.Start (Seconds (0.0));
@@ -289,7 +292,7 @@ int main (int argc, char *argv[])
 		    PacketSinkHelper sink ("ns3::UdpSocketFactory", InetSocketAddress(interfacesWifi.GetAddress(i), m_port));
 
 		    ApplicationContainer sinkApp = sink.Install(wifiStaNodes.Get(i));
-		    sinkApp.Start(Seconds (0.0));
+		    sinkApp.Start(Seconds (1.0));
 		    sinkApp.Stop(Seconds (simTime));
   		}
   		else{
@@ -297,9 +300,10 @@ int main (int argc, char *argv[])
   			//std::cout << "Nó [" << i << "] com TCP." << std::endl;
 
   			uint16_t sinkPort = 9;
+      		uint16_t m_sink = sinkPort * i + 2000; //Para alcançar o nó ZERO quando i = 0
 
-      		Address sinkAddress (InetSocketAddress(csmaInterfaces.GetAddress(1), sinkPort));
-      		PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory",InetSocketAddress(csmaInterfaces.GetAddress(1), sinkPort));
+      		Address sinkAddress (InetSocketAddress(csmaInterfaces.GetAddress(1), m_sink));
+      		PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory",InetSocketAddress(csmaInterfaces.GetAddress(1), m_sink));
 
       		ApplicationContainer sinkApps = packetSinkHelper.Install(csmaNodes.Get(1));
       		sinkApps.Start (Seconds (0.0));
@@ -313,7 +317,7 @@ int main (int argc, char *argv[])
 
       		ApplicationContainer source;
       		source.Add(onOffHelper.Install (wifiStaNodes.Get(i)));
-      		source.Start(Seconds (0.0));
+      		source.Start(Seconds (1.0));
       		source.Stop(Seconds (simTime));
   		}
   	}
