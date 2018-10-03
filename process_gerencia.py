@@ -6,7 +6,7 @@ TRAFFICS = (2, 4, 6)
 ALGORITHMS = ("UDP","TCP") # DEIXAR AUTOMATICO NA LEITURA
 mobilidade = "est" #DEIXAR AUTOMATICO NA LEITURA
 
-REPLICATIONS = 5
+REPLICATIONS = 33
 
 # (0) Replication, (1) Host, (2) Clientes, (3) Vazao, (4) Delay, (5) Perdidos
 
