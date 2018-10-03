@@ -1,5 +1,10 @@
 # MC655-2018
 
+### Observações importantes ###
+
+* Criar pasta resultados em ns-3.29/
+* Criar pastas UDP, TCP e UDP-TCP em resultados/
+
 ### Executando simulação ###
 
 Colocar o script "run_gerencia.sh" na pasta scratch do NS3 e executar:
