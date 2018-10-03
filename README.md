@@ -3,7 +3,7 @@
 ### Observações importantes ###
 
 * Criar pasta resultados em ns-3.29/
-* Criar pastas UDP, TCP e UDP-TCP em resultados/
+* Criar pastas UDP, TCP e AMBOS (UDP e TCP) em resultados/
 
 ### Executando simulação ###
 
