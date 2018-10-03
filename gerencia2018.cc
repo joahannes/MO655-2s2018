@@ -62,13 +62,13 @@ void ImprimeMetricas (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, int
       //controle
       //std::cout<<std::endl;
       std::string flowidhost = "FlowID[" + std::to_string(stats->first) + "]";
-      // if(trafego == 0){
-      //   std::cout << flowidhost <<"   Trafego   UDP" << std::endl;
-      // }else if(trafego == 1){
-      //   std::cout << flowidhost <<"   Trafego   TCP" << std::endl;
-      // }else if(trafego == 2){
-      //   std::cout << flowidhost <<"   Trafego   UDP/TCP" << std::endl;
-      // }
+      if(trafego == 0){
+        std::cout << flowidhost <<"   Trafego   UDP" << std::endl;
+      }else if(trafego == 1){
+        std::cout << flowidhost <<"   Trafego   TCP" << std::endl;
+      }else if(trafego == 2){
+        std::cout << flowidhost <<"   Trafego   UDP/TCP" << std::endl;
+      }
       std::cout << flowidhost <<"   Clientes   " << clientes << std::endl; 
       std::cout << flowidhost <<"   Flow   "<< fiveTuple.sourceAddress <<" -----> "<<fiveTuple.destinationAddress<<std::endl;
       //std::cout << flowidhost <<"   TxPackets   " << stats->second.txPackets<<std::endl;
@@ -246,13 +246,13 @@ int main (int argc, char *argv[])
       onoff.SetAttribute ("PacketSize", UintegerValue (512));
 
       ApplicationContainer app = onoff.Install(csmaNodes.Get(1));
-      app.Start(Seconds (1.0));
+      app.Start(Seconds (0.0));
       app.Stop(Seconds (simTime));
 
       PacketSinkHelper sink ("ns3::UdpSocketFactory", InetSocketAddress(interfacesWifi.GetAddress(i), m_port));
 
       ApplicationContainer sinkApp = sink.Install(wifiStaNodes.Get(i));
-      sinkApp.Start(Seconds (2.0));
+      sinkApp.Start(Seconds (0.0));
       sinkApp.Stop(Seconds (simTime));
     }
   }
@@ -263,22 +263,16 @@ int main (int argc, char *argv[])
       uint16_t port = 1000;
       uint16_t m_port = port * i + 1000; //Para alcançar o nó ZERO quando i = 0
 
-      OnOffHelper onoff ("ns3::TcpSocketFactory", Address(InetSocketAddress(interfacesAp.GetAddress(0), m_port)));
-      onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), m_port)));
-      onoff.SetAttribute ("OnTime", StringValue ("ns3::NormalRandomVariable[Mean=5.|Variance=1.|Bound=10.]"));
-      onoff.SetAttribute ("OffTime", StringValue ("ns3::NormalRandomVariable[Mean=7.|Variance=1.|Bound=10.]"));
-      onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
-      onoff.SetAttribute ("PacketSize", UintegerValue (1500));
+      BulkSendHelper source ("ns3::TcpSocketFactory", InetSocketAddress (csmaInterfaces.GetAddress(1), m_port));
+      source.SetAttribute ("MaxBytes", UintegerValue (1500));
+      ApplicationContainer sourceApps = source.Install (csmaNodes.Get(1));
+      sourceApps.Start (Seconds (0.0));
+      sourceApps.Stop (Seconds (simTime));
 
-      ApplicationContainer app = onoff.Install(wifiApNode.Get(0));
-      app.Start(Seconds (1.0));
-      app.Stop(Seconds (simTime));
-
-      PacketSinkHelper sink ("ns3::TcpSocketFactory", InetSocketAddress(interfacesWifi.GetAddress(i), m_port));
-
-      ApplicationContainer sinkApp = sink.Install(wifiStaNodes.Get(i));
-      sinkApp.Start(Seconds (2.0));
-      sinkApp.Stop(Seconds (simTime));
+      PacketSinkHelper sink ("ns3::TcpSocketFactory", InetSocketAddress (interfacesWifi.GetAddress(i), m_port));
+      ApplicationContainer sinkApps = sink.Install (wifiStaNodes.Get(i));
+      sinkApps.Start (Seconds (0.0));
+      sinkApps.Stop (Seconds (simTime));
     }
 
   }else if(trafego == 2){
@@ -298,19 +292,19 @@ int main (int argc, char *argv[])
     }
 
 //NetAnim
-  if(trafego == 0)
-  {
-    AnimationInterface anim ("resultados/Gerencia2018_anim_UDP.xml");
-    anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
-    anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
-    anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
-    anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
-    anim.EnablePacketMetadata ();    
-  }
-  else if(trafego == 1)
-  {
+  // if(trafego == 0)
+  // {
+  //   AnimationInterface anim ("resultados/Gerencia2018_anim_UDP.xml");
+  //   anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
+  //   anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
+  //   anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
+  //   anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
+  //   anim.EnablePacketMetadata ();    
+  // }
+  // else if(trafego == 1)
+  // {
 
-  }
+  // }
 
   Simulator::Stop (Seconds (simTime));
   Simulator::Run ();
