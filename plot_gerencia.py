@@ -8,13 +8,13 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 import numpy as np
 
-TRAFFICS=(100, 200)
-
+TRAFFICS=(2, 4, 6)
 ALGORITHMS = ("UDP","TCP") #
 #
-X_LEGEND = 'Density (vehicles/km$^2$)'.decode('utf-8')
-x_max = 750
+X_LEGEND = 'Número de Clientes'.decode('utf-8')
 formato = '.eps'
+
+# (0) Replication, (1) Host, (2) Clientes, (3) Vazao, (4) Delay, (5) Perdidos
 
 #CONFIDENCE INTERVAL - BAR ERROR
 def confidence_interval(values):
@@ -31,46 +31,47 @@ def plot_delay():
 
 	delay = float(0)
 
-	values = []
-	file_input_name =  "summary.txt"
+	for traffic in TRAFFICS:
+		values = []
+		file_input_name = "summary-" + str(traffic) + ".txt"
 
-	replication = 0
-	delay = 0.0
+		replication = 0
+		delay = 0.0
 
-	for line in open(file_input_name):
-		if replication == int(line.split()[0]): 
-			if line.split()[3] != "NA":
-				#print line.split()[3]
-				delay += float(line.split()[3])
-				print delay
-				values.append(delay)
+		for line in open(file_input_name):
+			if replication == int(line.split()[0]): 
+				if line.split()[4] != "NA":
+					#print line.split()[3]
+					delay += float(line.split()[4])
+					#print delay
+					#values.append(delay)
 
-		#else:
-		#	# CHANGED
-		#	if not delay == 0.0:
-		#		values.append(delay)
-		#		#delay = 0.0
-		#		print "aqui"
+			else:
+			# CHANGED
+				if not delay == 0.0:
+					values.append(delay)
+					delay = 0.0
+			#		print "aqui"
 
-		while replication != int(line.split()[0]):
-			replication += 1
-		
-	values = np.divide(values,20)
-	#print values
+			while replication != int(line.split()[0]):
+				replication += 1
+			
+		values = np.divide(values,traffic)
+		#print values
 
-	delay_values.append(np.mean(values))
-	#print(algorithm, " - mean:", np.mean(values))
-	confidence_intervals.append(confidence_interval(values))
-	print(" - confidence: ", confidence_interval(values))
+		delay_values.append(np.mean(values))
+		#print(algorithm, " - mean:", np.mean(values))
+		confidence_intervals.append(confidence_interval(values))
+		print(" - confidence: ", confidence_interval(values))
 	
-	plt.errorbar(100, delay_values, yerr=confidence_intervals, label="UDP", color="r", marker="s", linestyle="-", markersize = 8, linewidth = 2)
+	plt.errorbar(TRAFFICS, delay_values, yerr=confidence_intervals, label="UDP", color="r", marker="s", linestyle="-", markersize = 8, linewidth = 2)
 
 	#yticks = np.arange(50, 110, 10)
-	#plt.xlabel(X_LEGEND)
-	plt.ylabel('Delay (s)')
-	plt.xlim(50, x_max)
+	plt.xlabel(X_LEGEND)
+	plt.ylabel('Atraso (s)')
+	plt.xlim(1, 7)
 	#plt.ylim(0,1.5)
-	#plt.xticks(TRAFFICS)
+	plt.xticks(TRAFFICS)
 	#plt.yticks(yticks)
 	#plt.xticks((60, 100, 150))
 	
