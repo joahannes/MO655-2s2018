@@ -25,8 +25,6 @@
 #include "ns3/flow-monitor.h"
 #include "ns3/flow-monitor-helper.h"
 
-#include "ns3/gnuplot.h"
-
 #include "ns3/rng-seed-manager.h"
 
 #include "ns3/random-variable-stream.h"
@@ -40,17 +38,18 @@
 // 
 // Number of wifi nodes can be increased up to 250
 
-// Aplicações UDP, TCP e Ambas - OK
+// >>>>> Atualizar
+// Aplicação TCP
+// Aplicação UDP e TCP ao mesmo tempo
 // Porcentagem de nós ativos
-// 
-
+// Mobilidade
 
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("projetoGerencia2018");
 
 
-void ImprimeMetricas (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, int trafego){
+void ImprimeMetricas (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, int trafego, int clientes){
   double tempThroughput = 0.0;
   monitor->CheckForLostPackets(); 
   std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats();
@@ -70,6 +69,7 @@ void ImprimeMetricas (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, int
       // }else if(trafego == 2){
       //   std::cout << flowidhost <<"   Trafego   UDP/TCP" << std::endl;
       // }
+      std::cout << flowidhost <<"   Clientes   " << clientes << std::endl; 
       std::cout << flowidhost <<"   Flow   "<< fiveTuple.sourceAddress <<" -----> "<<fiveTuple.destinationAddress<<std::endl;
       //std::cout << flowidhost <<"   TxPackets   " << stats->second.txPackets<<std::endl;
       //std::cout << flowidhost <<"   RxPackets   " << stats->second.rxPackets<<std::endl;
@@ -83,7 +83,7 @@ void ImprimeMetricas (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, int
       //std::cout<<"------------------------------------------"<<std::endl;
     }
   //Tempo que será iniciado
-  Simulator::Schedule(Seconds(1),&ImprimeMetricas, fmhelper, monitor, trafego);
+  Simulator::Schedule(Seconds(1),&ImprimeMetricas, fmhelper, monitor, trafego, clientes);
 }
 
 
@@ -93,7 +93,7 @@ int main (int argc, char *argv[])
   bool verbose = true; //Verbose
   uint32_t nWifi = 5; //Quantidade de nós WiFi
   uint32_t apWifi = 1; //Quantidade de APs
-  bool tracing = true; //PCAP
+  bool tracing = false; //PCAP
   bool mobilidade = false; //Mobilidade
   double distance = 5.0; //Distancia entre os nós
   double simTime = 20.0; //Tempo de simulação
@@ -184,17 +184,32 @@ int main (int argc, char *argv[])
   //WiFi_nodes
   if (mobilidade == false)
   {
-  	Ptr<ListPositionAllocator> positionAlloc1 = CreateObject<ListPositionAllocator> ();
-  	for (uint16_t i = 0; i < wifiStaNodes.GetN(); i++){
-  		positionAlloc1->Add (Vector(distance * i + 10 * u->GetValue(), i * 10, 0));
-  	}
-  	MobilityHelper mobilityWifi;
-  	mobilityWifi.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-	mobilityWifi.SetPositionAllocator(positionAlloc1);
-	mobilityWifi.Install(wifiStaNodes);
+    Ptr<ListPositionAllocator> positionAlloc1 = CreateObject<ListPositionAllocator> ();
+    for (uint16_t i = 0; i < wifiStaNodes.GetN(); i++){
+      positionAlloc1->Add (Vector(distance * i + 10 * u->GetValue(), i * 10, 0));
+    }
+    MobilityHelper mobilityWifi;
+    mobilityWifi.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+  	mobilityWifi.SetPositionAllocator(positionAlloc1);
+  	mobilityWifi.Install(wifiStaNodes);
   }
   else{
-  	//mobilidade aqui
+  	MobilityHelper mobilityWifi;	  
+  	mobilityWifi.SetPositionAllocator ("ns3::GridPositionAllocator",
+                                 "MinX", DoubleValue (1.0),
+                                 "MinY", DoubleValue (1.0),
+                                 "DeltaX", DoubleValue (3.0), //Distancia entre os nós em X
+                                 "DeltaY", DoubleValue (3.0), //Distancia entre os nós em Y
+                                 "GridWidth", UintegerValue (4),
+                                 "LayoutType", StringValue ("RowFirst")); //Determina se as posições são alocadas primeiro linha ou coluna primeiro.
+
+  	mobilityWifi.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+                             "Mode", StringValue ("Time"),
+                             "Time", StringValue ("2s"),
+                             "Speed", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"),
+                             "Bounds", RectangleValue (Rectangle (0.0, 800.0, 0.0, 800.0)));
+  	//Instala a mobilidade móvel nos Clientes
+  	mobilityWifi.Install (wifiStaNodes);
   }
 
 //Pilha de Internet
@@ -303,7 +318,7 @@ int main (int argc, char *argv[])
 //Imprime métricas no Terminal
   if (verbose)
   {
-  	ImprimeMetricas (&fmhelper, monitor, trafego);
+    ImprimeMetricas (&fmhelper, monitor, trafego, nWifi);
   }
 
 //FlowMonitor
