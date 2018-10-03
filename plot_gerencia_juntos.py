@@ -64,6 +64,7 @@ def plot_delay():
 					replication += 1
 				
 			values = np.divide(values,traffic)
+			#values = np.multiply(values,60)
 			#print values
 
 			delay_values.append(np.mean(values))
@@ -173,7 +174,7 @@ def plot_perda():
 		for traffic in TRAFFICS:
 			values = []
 			file_input_name = algorithm + "/summary-" + str(traffic) + "-" + mobilidade + ".txt"
-			print file_input_name
+			#print file_input_name
 			replication = 0
 			perda = 0.0
 
@@ -195,7 +196,7 @@ def plot_perda():
 				while replication != int(line.split()[0]):
 					replication += 1
 				
-			values = np.divide(values,traffic)
+			#values = np.divide(values,traffic)
 			#print values
 
 			perda_values.append(np.mean(values))
