@@ -14,19 +14,14 @@
 #include "ns3/wifi-module.h"
 #include "ns3/mobility-module.h"
 #include "ns3/internet-module.h"
-
 #include "ns3/csma-module.h"
 #include "ns3/point-to-point-module.h"
-
 #include "ns3/netanim-module.h"
-
 //Monitor de fluxo
 #include "ns3/flow-monitor-module.h"
 #include "ns3/flow-monitor.h"
 #include "ns3/flow-monitor-helper.h"
-
 #include "ns3/rng-seed-manager.h"
-
 #include "ns3/random-variable-stream.h"
 
 // Default Network Topology
@@ -37,12 +32,6 @@
 // s0   s1   a0   s2   s3
 // 
 // Number of wifi nodes can be increased up to 250
-
-// >>>>> Atualizar
-// Aplicação TCP
-// Aplicação UDP e TCP ao mesmo tempo
-// Porcentagem de nós ativos
-// Mobilidade
 
 using namespace ns3;
 
@@ -95,7 +84,7 @@ int main (int argc, char *argv[])
   uint32_t apWifi = 1; //Quantidade de APs
   bool tracing = false; //PCAP
   bool mobilidade = false; //Mobilidade
-  double distance = 5.0; //Distancia entre os nós
+  double distance = 10.0; //Distancia entre os nós
   double simTime = 20.0; //Tempo de simulação
   int trafego = 0;
 
@@ -174,7 +163,7 @@ int main (int argc, char *argv[])
   mobilityAp.Install(wifiApNode);
 
   Ptr<ListPositionAllocator> positionAllocRouter = CreateObject<ListPositionAllocator> ();
-  positionAllocRouter->Add (Vector(0, -10, 0));
+  positionAllocRouter->Add (Vector(0, -5, 0));
 
   MobilityHelper router;
   router.SetMobilityModel("ns3::ConstantPositionMobilityModel");
@@ -183,38 +172,37 @@ int main (int argc, char *argv[])
 
   //WiFi_nodes
   if (mobilidade == false)
-  {
-    Ptr<ListPositionAllocator> positionAlloc1 = CreateObject<ListPositionAllocator> ();
-    for (uint16_t i = 0; i < wifiStaNodes.GetN(); i++){
-      positionAlloc1->Add (Vector(distance * i + 10 * u->GetValue(), i * 10, 0));
-    }
+  { 
     MobilityHelper mobilityWifi;
-    mobilityWifi.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-  	mobilityWifi.SetPositionAllocator(positionAlloc1);
-  	mobilityWifi.Install(wifiStaNodes);
+    mobilityWifi.SetPositionAllocator ("ns3::GridPositionAllocator",
+                             "MinX", DoubleValue (0.0),
+                             "MinY", DoubleValue (5.0),
+                             "DeltaX", DoubleValue (distance * u->GetValue()), //Distancia entre os nós em X
+                             "DeltaY", DoubleValue (distance * u->GetValue()), //Distancia entre os nós em Y
+                             "GridWidth", UintegerValue (6),
+                             "LayoutType", StringValue ("RowFirst"));
+    mobilityWifi.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
+    mobilityWifi.Install (wifiStaNodes);
   }
   else{
   	MobilityHelper mobilityWifi;	  
   	mobilityWifi.SetPositionAllocator ("ns3::GridPositionAllocator",
-                                 "MinX", DoubleValue (1.0),
-                                 "MinY", DoubleValue (1.0),
-                                 "DeltaX", DoubleValue (3.0), //Distancia entre os nós em X
-                                 "DeltaY", DoubleValue (3.0), //Distancia entre os nós em Y
-                                 "GridWidth", UintegerValue (4),
+                                 "MinX", DoubleValue (0.0),
+                                 "MinY", DoubleValue (5.0),
+                                 "DeltaX", DoubleValue (distance * u->GetValue()), //Distancia entre os nós em X
+                                 "DeltaY", DoubleValue (distance * u->GetValue()), //Distancia entre os nós em Y
+                                 "GridWidth", UintegerValue (6),
                                  "LayoutType", StringValue ("RowFirst")); //Determina se as posições são alocadas primeiro linha ou coluna primeiro.
 
   	mobilityWifi.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
-                             "Mode", StringValue ("Time"),
-                             "Time", StringValue ("2s"),
-                             "Speed", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"),
-                             "Bounds", RectangleValue (Rectangle (0.0, 800.0, 0.0, 800.0)));
+                             "Bounds", RectangleValue (Rectangle (0.0, 100.0, 0.0, 100.0)));
   	//Instala a mobilidade móvel nos Clientes
   	mobilityWifi.Install (wifiStaNodes);
   }
 
 //Pilha de Internet
   InternetStackHelper stack;
-  stack.Install (csmaNodes); //Ja inclue o APnode
+  stack.Install (csmaNodes);
   stack.Install (wifiStaNodes);
 
   Ipv4AddressHelper address;
@@ -227,14 +215,11 @@ int main (int argc, char *argv[])
   Ipv4InterfaceContainer interfacesAp = address.Assign (apDevices);
   Ipv4InterfaceContainer interfacesWifi = address.Assign (staDevices);
 
-  //UDP -> 0
-  //TCP -> 1
-  //AMBOS -> 2
+  //(0) UDP, (1) TCP e (2) UDP/TCP
   if(trafego == 0)
   {
     //Aplicacao UDP
     for (uint32_t i = 0; i < wifiStaNodes.GetN(); i++){
-
       uint16_t port = 1000;
       uint16_t m_port = port * i + 1000; //Para alcançar o nó ZERO quando i = 0
 
@@ -259,24 +244,79 @@ int main (int argc, char *argv[])
   else if(trafego == 1){
     //Aplicacao TCP
     for (uint32_t i = 0; i < wifiStaNodes.GetN(); i++){
+      uint16_t sinkPort = 9;
 
-      uint16_t port = 1000;
-      uint16_t m_port = port * i + 1000; //Para alcançar o nó ZERO quando i = 0
+      Address sinkAddress (InetSocketAddress(csmaInterfaces.GetAddress(1), sinkPort));
+      PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory",InetSocketAddress(csmaInterfaces.GetAddress(1), sinkPort));
 
-      BulkSendHelper source ("ns3::TcpSocketFactory", InetSocketAddress (csmaInterfaces.GetAddress(1), m_port));
-      source.SetAttribute ("MaxBytes", UintegerValue (1500));
-      ApplicationContainer sourceApps = source.Install (csmaNodes.Get(1));
-      sourceApps.Start (Seconds (0.0));
-      sourceApps.Stop (Seconds (simTime));
-
-      PacketSinkHelper sink ("ns3::TcpSocketFactory", InetSocketAddress (interfacesWifi.GetAddress(i), m_port));
-      ApplicationContainer sinkApps = sink.Install (wifiStaNodes.Get(i));
+      ApplicationContainer sinkApps = packetSinkHelper.Install(csmaNodes.Get(1));
       sinkApps.Start (Seconds (0.0));
       sinkApps.Stop (Seconds (simTime));
+
+      OnOffHelper onOffHelper ("ns3::TcpSocketFactory",sinkAddress);
+      onOffHelper.SetAttribute("OnTime", StringValue("ns3::NormalRandomVariable[Mean=5.|Variance=1.|Bound=10.]"));
+      onOffHelper.SetAttribute("OffTime", StringValue("ns3::NormalRandomVariable[Mean=7.|Variance=1.|Bound=10.]"));
+      onOffHelper.SetAttribute ("DataRate",StringValue ("512kbps"));
+      onOffHelper.SetAttribute ("PacketSize", UintegerValue (1436));
+
+      ApplicationContainer source;
+      source.Add(onOffHelper.Install (wifiStaNodes.Get(i)));
+      source.Start(Seconds (1.0));
+      source.Stop(Seconds (simTime));
     }
 
   }else if(trafego == 2){
-    return 1;
+  	//Aplicação UDP e TCP
+  	for (uint32_t i = 0; i < wifiStaNodes.GetN(); i++){
+  		if(i % 2 == 0){
+  			
+  			//std::cout << "Nó [" << i << "] com UDP." << std::endl;
+
+  			uint16_t port = 1000;
+      		uint16_t m_port = port * i + 1000; //Para alcançar o nó ZERO quando i = 0
+
+		    OnOffHelper onoff ("ns3::UdpSocketFactory", Address(InetSocketAddress(csmaInterfaces.GetAddress(1), m_port)));
+		    onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), m_port)));
+		    onoff.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"));
+		    onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"));
+		    onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
+		    onoff.SetAttribute ("PacketSize", UintegerValue (512));
+
+		    ApplicationContainer app = onoff.Install(csmaNodes.Get(1));
+		    app.Start(Seconds (0.0));
+		    app.Stop(Seconds (simTime));
+
+		    PacketSinkHelper sink ("ns3::UdpSocketFactory", InetSocketAddress(interfacesWifi.GetAddress(i), m_port));
+
+		    ApplicationContainer sinkApp = sink.Install(wifiStaNodes.Get(i));
+		    sinkApp.Start(Seconds (0.0));
+		    sinkApp.Stop(Seconds (simTime));
+  		}
+  		else{
+
+  			//std::cout << "Nó [" << i << "] com TCP." << std::endl;
+
+  			uint16_t sinkPort = 9;
+
+      		Address sinkAddress (InetSocketAddress(csmaInterfaces.GetAddress(1), sinkPort));
+      		PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory",InetSocketAddress(csmaInterfaces.GetAddress(1), sinkPort));
+
+      		ApplicationContainer sinkApps = packetSinkHelper.Install(csmaNodes.Get(1));
+      		sinkApps.Start (Seconds (0.0));
+      		sinkApps.Stop (Seconds (simTime));
+
+      		OnOffHelper onOffHelper ("ns3::TcpSocketFactory",sinkAddress);
+      		onOffHelper.SetAttribute("OnTime", StringValue("ns3::NormalRandomVariable[Mean=5.|Variance=1.|Bound=10.]"));
+      		onOffHelper.SetAttribute("OffTime", StringValue("ns3::NormalRandomVariable[Mean=7.|Variance=1.|Bound=10.]"));
+      		onOffHelper.SetAttribute ("DataRate",StringValue ("512kbps"));
+      		onOffHelper.SetAttribute ("PacketSize", UintegerValue (1436));
+
+      		ApplicationContainer source;
+      		source.Add(onOffHelper.Install (wifiStaNodes.Get(i)));
+      		source.Start(Seconds (0.0));
+      		source.Stop(Seconds (simTime));
+  		}
+  	}
   }
 
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
@@ -292,19 +332,12 @@ int main (int argc, char *argv[])
     }
 
 //NetAnim
-  // if(trafego == 0)
-  // {
-  //   AnimationInterface anim ("resultados/Gerencia2018_anim_UDP.xml");
-  //   anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
-  //   anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
-  //   anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
-  //   anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
-  //   anim.EnablePacketMetadata ();    
-  // }
-  // else if(trafego == 1)
-  // {
-
-  // }
+    AnimationInterface anim ("Gerencia2018_anim.xml");
+    anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
+    anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
+    anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
+    anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
+    anim.EnablePacketMetadata ();    
 
   Simulator::Stop (Seconds (simTime));
   Simulator::Run ();
