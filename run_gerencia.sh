@@ -43,16 +43,16 @@ do
 		then
 			echo "Executando seed [$i] com $2 clientes ESTÁTICOS e tráfego UDP..."
 			#Chamada da simulacao
-			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/results-est-udp-$i.txt 2>&1
+			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/UDP/results-$2-est-udp-$i.txt 2>&1
 		elif [ $3 == 1 ]
 		then
 			echo "Executando seed [$i] com $2 clientes ESTÁTICOS e tráfego TCP..."
 			#Chamada da simulacao
-			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/results-est-tcp-$i.txt 2>&1
+			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/TCP/results-$2-est-tcp-$i.txt 2>&1
 		else
 			echo "Executando seed [$i] com $2 clientes ESTÁTICOS e tráfegos UDP/TCP..."
 			#Chamada da simulacao
-			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/results-est-ambos-$i.txt 2>&1
+			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/UDP-TCP/results-$2-est-ambos-$i.txt 2>&1
 		fi
 	else
 		#Controle para mensagens
@@ -60,16 +60,16 @@ do
 		then
 			echo "Executando seed [$i] com $2 clientes MÓVEIS e tráfego UDP..."
 			#Chamada da simulacao
-			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/results-mov-udp-$i.txt 2>&1
+			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/UDP/results-$2-mov-udp-$i.txt 2>&1
 		elif [ $3 == 1 ]
 		then
 			echo "Executando seed [$i] com $2 clientes MÓVEIS e tráfego TCP..."
 			#Chamada da simulacao
-			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/results-mov-tcp-$i.txt 2>&1
+			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/TCP/results-$2-mov-tcp-$i.txt 2>&1
 		else
 			echo "Executando seed [$i] com $2 clientes MÓVEIS e tráfegos UDP/TCP..."
 			#Chamada da simulacao
-			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/results-mov-ambos-$i.txt 2>&1
+			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/UDP-TCP/results-$2-mov-ambos-$i.txt 2>&1
 		fi
 	fi
 done
