@@ -50,7 +50,7 @@ def plot_delay():
 					if line.split()[4] != "0":
 						#print line.split()[3]
 						delay += float(line.split()[4])
-						print delay
+						#print delay
 						#values.append(delay)
 
 				else:
@@ -62,8 +62,11 @@ def plot_delay():
 
 				while replication != int(line.split()[0]):
 					replication += 1
-				
-			values = np.divide(values,traffic)
+			
+			if algorithm == "TCP":
+				values = np.divide(values,traffic*2)
+			else:
+				values = np.divide(values,traffic)
 			#values = np.multiply(values,60)
 			#print values
 
@@ -130,7 +133,10 @@ def plot_vazao():
 				while replication != int(line.split()[0]):
 					replication += 1
 				
-			values = np.divide(values,traffic)
+			if algorithm == "TCP":
+				values = np.divide(values,traffic*2)
+			else:
+				values = np.divide(values,traffic)
 			#print values
 
 			vazao_values.append(np.mean(values))
@@ -195,8 +201,12 @@ def plot_perda():
 
 				while replication != int(line.split()[0]):
 					replication += 1
-				
+			
 			#values = np.divide(values,traffic)
+			# if algorithm == "TCP":
+			# 	values = np.divide(values,traffic*2)
+			# else:
+			# 	values = np.divide(values,traffic)
 			#print values
 
 			perda_values.append(np.mean(values))
