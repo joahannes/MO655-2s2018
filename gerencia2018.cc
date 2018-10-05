@@ -189,16 +189,15 @@ int main (int argc, char *argv[])
   else{
   	MobilityHelper mobilityWifi;	  
   	mobilityWifi.SetPositionAllocator ("ns3::GridPositionAllocator",
-                                 "MinX", DoubleValue (0.0),
-                                 "MinY", DoubleValue (10.0),
-                                 "DeltaX", DoubleValue (distance), // ADD * u->GetValue() Distancia entre os nós em X
-                                 "DeltaY", DoubleValue (distance), //Distancia entre os nós em Y
-                                 "GridWidth", UintegerValue (6),
-                                 "LayoutType", StringValue ("RowFirst")); //Determina se as posições são alocadas primeiro linha ou coluna primeiro.
+                              "MinX", DoubleValue (0.0),
+                              "MinY", DoubleValue (10.0),
+                              "DeltaX", DoubleValue (distance), // ADD * u->GetValue() Distancia entre os nós em X
+                              "DeltaY", DoubleValue (distance), //Distancia entre os nós em Y
+                              "GridWidth", UintegerValue (6),
+                              "LayoutType", StringValue ("RowFirst")); //Determina se as posições são alocadas primeiro linha ou coluna primeiro.
 
   	mobilityWifi.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
-                             "Bounds", RectangleValue (Rectangle (0.0, 100.0, 0.0, 100.0)));
-  	//Instala a mobilidade móvel nos Clientes
+                              "Bounds", RectangleValue (Rectangle (0.0, 100.0, 0.0, 100.0)));
   	mobilityWifi.Install (wifiStaNodes);
   }
 
@@ -227,19 +226,20 @@ int main (int argc, char *argv[])
 
       OnOffHelper onoff ("ns3::UdpSocketFactory", Address(InetSocketAddress(csmaInterfaces.GetAddress(1), m_port)));
       onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), m_port)));
-      onoff.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"));
-      onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"));
-      onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
+      onoff.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=0.001]"));
+      onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0.001]"));
+      //onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
       onoff.SetAttribute ("PacketSize", UintegerValue (512));
 
       ApplicationContainer app = onoff.Install(csmaNodes.Get(1));
-      app.Start(Seconds (0.0));
+      app.Start(Seconds (1.0));
       app.Stop(Seconds (simTime));
 
+      // Crie um coletor de pacotes para receber esses pacotes
       PacketSinkHelper sink ("ns3::UdpSocketFactory", InetSocketAddress(interfacesWifi.GetAddress(i), m_port));
 
       ApplicationContainer sinkApp = sink.Install(wifiStaNodes.Get(i));
-      sinkApp.Start(Seconds (1.0));
+      sinkApp.Start(Seconds (1.1));
       sinkApp.Stop(Seconds (simTime));
     }
   }
@@ -249,22 +249,23 @@ int main (int argc, char *argv[])
       uint16_t sinkPort = 9;
       uint16_t m_port = sinkPort * i + 1000; //Para alcançar o nó ZERO quando i = 0
 
+
       Address sinkAddress (InetSocketAddress(csmaInterfaces.GetAddress(1), m_port));
       PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory",InetSocketAddress(csmaInterfaces.GetAddress(1), m_port));
 
       ApplicationContainer sinkApps = packetSinkHelper.Install(csmaNodes.Get(1));
-      sinkApps.Start (Seconds (0.0));
+      sinkApps.Start (Seconds (1.0));
       sinkApps.Stop (Seconds (simTime));
 
       OnOffHelper onOffHelper ("ns3::TcpSocketFactory",sinkAddress);
-      onOffHelper.SetAttribute("OnTime", StringValue("ns3::NormalRandomVariable[Mean=5.|Variance=1.|Bound=10.]"));
-      onOffHelper.SetAttribute("OffTime", StringValue("ns3::NormalRandomVariable[Mean=7.|Variance=1.|Bound=10.]"));
-      onOffHelper.SetAttribute ("DataRate",StringValue ("512kbps"));
-      onOffHelper.SetAttribute ("PacketSize", UintegerValue (1436));
+      onOffHelper.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=0.001]"));
+      onOffHelper.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0.001]"));
+      //onOffHelper.SetAttribute ("DataRate",StringValue ("1Mbps"));
+      onOffHelper.SetAttribute ("PacketSize", UintegerValue (1500));
 
       ApplicationContainer source;
       source.Add(onOffHelper.Install (wifiStaNodes.Get(i)));
-      source.Start(Seconds (1.0));
+      source.Start(Seconds (1.1));
       source.Stop(Seconds (simTime));
     }
 
@@ -275,50 +276,51 @@ int main (int argc, char *argv[])
   			
   			//std::cout << "Nó [" << i << "] com UDP." << std::endl;
 
-  			uint16_t port = 1000;
-      		uint16_t m_port = port * i + 1000; //Para alcançar o nó ZERO quando i = 0
+        uint16_t port = 1000;
+        uint16_t m_port = port * i + 1000; //Para alcançar o nó ZERO quando i = 0
 
-		    OnOffHelper onoff ("ns3::UdpSocketFactory", Address(InetSocketAddress(csmaInterfaces.GetAddress(1), m_port)));
-		    onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), m_port)));
-		    onoff.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"));
-		    onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"));
-		    onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
-		    onoff.SetAttribute ("PacketSize", UintegerValue (512));
+        OnOffHelper onoff ("ns3::UdpSocketFactory", Address(InetSocketAddress(csmaInterfaces.GetAddress(1), m_port)));
+        onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), m_port)));
+        onoff.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=0.001]"));
+        onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0.001]"));
+        //onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
+        onoff.SetAttribute ("PacketSize", UintegerValue (512));
 
-		    ApplicationContainer app = onoff.Install(csmaNodes.Get(1));
-		    app.Start(Seconds (0.0));
-		    app.Stop(Seconds (simTime));
+        ApplicationContainer app = onoff.Install(csmaNodes.Get(1));
+        app.Start(Seconds (1.0));
+        app.Stop(Seconds (simTime));
 
-		    PacketSinkHelper sink ("ns3::UdpSocketFactory", InetSocketAddress(interfacesWifi.GetAddress(i), m_port));
+        // Crie um coletor de pacotes para receber esses pacotes
+        PacketSinkHelper sink ("ns3::UdpSocketFactory", InetSocketAddress(interfacesWifi.GetAddress(i), m_port));
 
-		    ApplicationContainer sinkApp = sink.Install(wifiStaNodes.Get(i));
-		    sinkApp.Start(Seconds (1.0));
-		    sinkApp.Stop(Seconds (simTime));
+        ApplicationContainer sinkApp = sink.Install(wifiStaNodes.Get(i));
+        sinkApp.Start(Seconds (1.1));
+        sinkApp.Stop(Seconds (simTime));
   		}
   		else{
 
   			//std::cout << "Nó [" << i << "] com TCP." << std::endl;
 
-  			uint16_t sinkPort = 9;
-      		uint16_t m_sink = sinkPort * i + 2000; //Para alcançar o nó ZERO quando i = 0
+        uint16_t sinkPort = 9;
+        uint16_t m_port = sinkPort * i + 1000; //Para alcançar o nó ZERO quando i = 0
 
-      		Address sinkAddress (InetSocketAddress(csmaInterfaces.GetAddress(1), m_sink));
-      		PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory",InetSocketAddress(csmaInterfaces.GetAddress(1), m_sink));
+        Address sinkAddress (InetSocketAddress(csmaInterfaces.GetAddress(1), m_port));
+        PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory",InetSocketAddress(csmaInterfaces.GetAddress(1), m_port));
 
-      		ApplicationContainer sinkApps = packetSinkHelper.Install(csmaNodes.Get(1));
-      		sinkApps.Start (Seconds (0.0));
-      		sinkApps.Stop (Seconds (simTime));
+        ApplicationContainer sinkApps = packetSinkHelper.Install(csmaNodes.Get(1));
+        sinkApps.Start (Seconds (1.0));
+        sinkApps.Stop (Seconds (simTime));
 
-      		OnOffHelper onOffHelper ("ns3::TcpSocketFactory",sinkAddress);
-      		onOffHelper.SetAttribute("OnTime", StringValue("ns3::NormalRandomVariable[Mean=5.|Variance=1.|Bound=10.]"));
-      		onOffHelper.SetAttribute("OffTime", StringValue("ns3::NormalRandomVariable[Mean=7.|Variance=1.|Bound=10.]"));
-      		onOffHelper.SetAttribute ("DataRate",StringValue ("512kbps"));
-      		onOffHelper.SetAttribute ("PacketSize", UintegerValue (1436));
+        OnOffHelper onOffHelper ("ns3::TcpSocketFactory",sinkAddress);
+        onOffHelper.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=0.001]"));
+        onOffHelper.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0.001]"));
+        //onOffHelper.SetAttribute ("DataRate",StringValue ("1Mbps"));
+        onOffHelper.SetAttribute ("PacketSize", UintegerValue (1500));
 
-      		ApplicationContainer source;
-      		source.Add(onOffHelper.Install (wifiStaNodes.Get(i)));
-      		source.Start(Seconds (1.0));
-      		source.Stop(Seconds (simTime));
+        ApplicationContainer source;
+        source.Add(onOffHelper.Install (wifiStaNodes.Get(i)));
+        source.Start(Seconds (1.1));
+        source.Stop(Seconds (simTime));
   		}
   	}
   }
@@ -336,12 +338,12 @@ int main (int argc, char *argv[])
     }
 
 //NetAnim
-    AnimationInterface anim ("Gerencia2018_anim.xml");
-    anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
-    anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
-    anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
-    anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
-    anim.EnablePacketMetadata ();    
+  AnimationInterface anim ("Gerencia2018_anim.xml");
+  anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
+  anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
+  anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
+  anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
+  anim.EnablePacketMetadata ();    
 
   Simulator::Stop (Seconds (simTime));
   Simulator::Run ();
