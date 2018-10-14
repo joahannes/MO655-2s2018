@@ -43,16 +43,16 @@ do
 		then
 			echo "Executando seed [$i] com $2 clientes ESTÁTICOS e tráfego UDP..."
 			#Chamada da simulacao
-			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/UDP/results-$2-est-UDP-$i.txt 2>&1
+			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 --mobilidade=$4" > resultados/UDP/results-$2-est-UDP-$i.txt 2>&1
 		elif [ $3 == 1 ]
 		then
 			echo "Executando seed [$i] com $2 clientes ESTÁTICOS e tráfego TCP..."
 			#Chamada da simulacao
-			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/TCP/results-$2-est-TCP-$i.txt 2>&1
+			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 --mobilidade=$4" > resultados/TCP/results-$2-est-TCP-$i.txt 2>&1
 		else
 			echo "Executando seed [$i] com $2 clientes ESTÁTICOS e tráfegos UDP/TCP..."
 			#Chamada da simulacao
-			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/UDP-TCP/results-$2-est-AMBOS-$i.txt 2>&1
+			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 --mobilidade=$4" > resultados/UDP-TCP/results-$2-est-AMBOS-$i.txt 2>&1
 		fi
 	else
 		#Controle para mensagens
@@ -60,16 +60,16 @@ do
 		then
 			echo "Executando seed [$i] com $2 clientes MÓVEIS e tráfego UDP..."
 			#Chamada da simulacao
-			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/UDP/results-$2-mov-UDP-$i.txt 2>&1
+			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 --mobilidade=$4" > resultados/UDP/results-$2-mov-UDP-$i.txt 2>&1
 		elif [ $3 == 1 ]
 		then
 			echo "Executando seed [$i] com $2 clientes MÓVEIS e tráfego TCP..."
 			#Chamada da simulacao
-			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/TCP/results-$2-mov-TCP-$i.txt 2>&1
+			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 --mobilidade=$4" > resultados/TCP/results-$2-mov-TCP-$i.txt 2>&1
 		else
 			echo "Executando seed [$i] com $2 clientes MÓVEIS e tráfegos UDP/TCP..."
 			#Chamada da simulacao
-			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 -mobilidade=$4" > resultados/UDP-TCP/results-$2-mov-AMBOS-$i.txt 2>&1
+			./waf --run "scratch/gerencia2018 --seed=$i --nWifi=$2 --trafego=$3 --mobilidade=$4" > resultados/UDP-TCP/results-$2-mov-AMBOS-$i.txt 2>&1
 		fi
 	fi
 done
