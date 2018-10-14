@@ -2,7 +2,7 @@
 
 import os
 
-TRAFFICS = (2, 4, 6)
+TRAFFICS = (1, 2, 4, 6)
 ALGORITHMS = ("UDP","TCP") # DEIXAR AUTOMATICO NA LEITURA
 mobilidade = "est" #DEIXAR AUTOMATICO NA LEITURA
 
@@ -26,7 +26,7 @@ def build_summary_files():
 				while line:
 					if "FlowID[" in line:
 						line_splited = line.split()
-
+						print line
 						#Vazao
 						if "Clientes" in line:
 							host = line_splited[0].split("]")[0][7:]
@@ -51,7 +51,7 @@ def build_summary_files():
 
 					line = result_file.readline()
 				result_file.close()
-				print "Arquivo", result_file.name ,"lido;\n"
+				#print "Arquivo", result_file.name ,"lido;\n"
 			summary_file.close()
 
 if __name__ == "__main__":
