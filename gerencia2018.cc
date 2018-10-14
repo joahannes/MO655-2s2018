@@ -39,6 +39,16 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("projetoGerencia2018");
 
+//Mobilidade para os dispositivos moveis
+void UpdateVelocity(Ptr<Node> node) {
+    Ptr<UniformRandomVariable> rvar = CreateObject<UniformRandomVariable>();
+    Ptr <ConstantVelocityMobilityModel> mobility = node -> GetObject<ConstantVelocityMobilityModel>();
+    
+    double speed = rvar->GetValue(1, 3);
+    mobility->SetVelocity (Vector (speed,0.0,0.0));
+
+    Simulator::Schedule (Seconds (1), UpdateVelocity, node);
+}
 
 void ImprimeMetricas (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, int trafego, int clientes){
   double tempThroughput = 0.0;
@@ -86,7 +96,7 @@ int main (int argc, char *argv[])
   uint32_t apWifi = 1; //Quantidade de APs
   bool tracing = false; //PCAP
   bool mobilidade = false; //Mobilidade
-  double distance = 5.0; //Distancia entre os nós
+  double distance = 10.0; //Distancia entre os nós
   double simTime = 20.0; //Tempo de simulação
   int trafego = 0;
 
@@ -157,7 +167,7 @@ int main (int argc, char *argv[])
 //Instancia a Mobilidade
   //AP_node
   Ptr<ListPositionAllocator> positionAlloc0 = CreateObject<ListPositionAllocator> ();
-  positionAlloc0->Add (Vector(12.5, 5, 0));
+  positionAlloc0->Add (Vector(75, 75, 0)); //(75,75,0)
 
   MobilityHelper mobilityAp;
   mobilityAp.SetMobilityModel("ns3::ConstantPositionMobilityModel");
@@ -177,8 +187,8 @@ int main (int argc, char *argv[])
   { 
     MobilityHelper mobilityWifi;
     mobilityWifi.SetPositionAllocator ("ns3::GridPositionAllocator",
-                             "MinX", DoubleValue (0.0),
-                             "MinY", DoubleValue (10.0),
+                             "MinX", DoubleValue (60.0),
+                             "MinY", DoubleValue (80.0),
                              "DeltaX", DoubleValue (distance), //Distancia entre os nós em X
                              "DeltaY", DoubleValue (distance), //Distancia entre os nós em Y
                              "GridWidth", UintegerValue (6),
@@ -189,16 +199,19 @@ int main (int argc, char *argv[])
   else{
   	MobilityHelper mobilityWifi;	  
   	mobilityWifi.SetPositionAllocator ("ns3::GridPositionAllocator",
-                              "MinX", DoubleValue (0.0),
-                              "MinY", DoubleValue (10.0),
+                              "MinX", DoubleValue (60.0),
+                              "MinY", DoubleValue (80.0),
                               "DeltaX", DoubleValue (distance), // ADD * u->GetValue() Distancia entre os nós em X
                               "DeltaY", DoubleValue (distance), //Distancia entre os nós em Y
                               "GridWidth", UintegerValue (6),
                               "LayoutType", StringValue ("RowFirst")); //Determina se as posições são alocadas primeiro linha ou coluna primeiro.
-
-  	mobilityWifi.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
-                              "Bounds", RectangleValue (Rectangle (0.0, 100.0, 0.0, 100.0)));
+    mobilityWifi.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
   	mobilityWifi.Install (wifiStaNodes);
+
+    for (uint16_t i = 0; i < nWifi; i++)
+    {
+      UpdateVelocity (wifiStaNodes.Get(i));
+    }
   }
 
 //Pilha de Internet
