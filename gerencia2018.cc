@@ -5,7 +5,7 @@
  * Professor: Edmundo Madeira
  * Autores: Joahannes Costa e Wellington Lobato Jr.
  * Email: joahannes, wellington{@lrc.ic.unicamp.br}
- *
+ * Laboratório de Redes de Computadores - LRC
  */
 
 #include "ns3/core-module.h"
@@ -24,59 +24,54 @@
 #include "ns3/rng-seed-manager.h"
 #include "ns3/random-variable-stream.h"
 
-// Default Network Topology
+// Topologia da rede
 // 
 //    10.1.1.0
-// r0*--------* AP
-//            
-//  *    *    *    *    * 192.168.0.0 
-//  |    |    |    |    |
-// s0   s1   a0   s2   s3
-// 
-// Number of wifi nodes can be increased up to 250
+// r0 *--------* AP
+//                    192.168.0.0
+//               *    *    *    *    *  
+//               |    |    |    |    |
+//               s0   s1   a0   s2   s3
+//
 
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("projetoGerencia2018");
 
 //Mobilidade para os dispositivos moveis
-void UpdateVelocity(Ptr<Node> node) {
+void AtualizaVelocidade(Ptr<Node> node) {
     Ptr<UniformRandomVariable> rvar = CreateObject<UniformRandomVariable>();
     Ptr <ConstantVelocityMobilityModel> mobility = node -> GetObject<ConstantVelocityMobilityModel>();
     
-    double speed = rvar->GetValue(1, 3);
-    mobility->SetVelocity (Vector (speed,0.0,0.0));
+    double velocidade = rvar->GetValue(2, 3); // 7.2 a 10.8 km/h
+    mobility->SetVelocity (Vector (velocidade, 0.0, 0.0));
 
-    Simulator::Schedule (Seconds (1), UpdateVelocity, node);
+    Simulator::Schedule (Seconds (1), AtualizaVelocidade, node);
 }
 
 void ImprimeMetricas (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, int trafego, int clientes){
-	double tempThroughput = 0.0;
-  	monitor->CheckForLostPackets(); 
-  	std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats();
-  	Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier());
+  double totalThroughput = 0.0;
+  monitor->CheckForLostPackets(); 
+  std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats();
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier());
 
 	for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator stats = flowStats.begin (); stats != flowStats.end (); ++stats)
 	{
 		Ipv4FlowClassifier::FiveTuple fiveTuple = classifier->FindFlow (stats->first);
-		std::string flowidhost = "FlowID[" + std::to_string(stats->first) + "]";
-		if(trafego == 0)
-		{
-		std::cout << flowidhost <<"   Trafego   UDP" << std::endl;
-		}
+    std::string flowidhost = "FlowID[" + std::to_string(stats->first) + "]";
+		
+    if(trafego == 0)
+      std::cout << flowidhost <<"   Trafego   UDP" << std::endl;
 		else if(trafego == 1)
-		{
-		std::cout << flowidhost <<"   Trafego   TCP" << std::endl;
-		}
+      std::cout << flowidhost <<"   Trafego   TCP" << std::endl;
 		else if(trafego == 2)
-		{
-		std::cout << flowidhost <<"   Trafego   UDP/TCP" << std::endl;
-		}
+      std::cout << flowidhost <<"   Trafego   UDP/TCP" << std::endl;
+
 		std::cout << flowidhost <<"   Clientes   " << clientes << std::endl; 
 		std::cout << flowidhost <<"   Flow   "<< fiveTuple.sourceAddress <<" -----> "<<fiveTuple.destinationAddress<<std::endl;
 		std::cout << flowidhost <<"   Duration   " <<stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds()<<std::endl;
-		tempThroughput = (stats->second.rxBytes * 8.0 / (stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds())/1024/1024);
-		std::cout << flowidhost <<"   Throughput(Mbps)   "<< tempThroughput <<std::endl;
+		totalThroughput = (stats->second.rxBytes * 8.0 / (stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds())/1024/1024);
+		std::cout << flowidhost <<"   Throughput(Mbps)   "<< totalThroughput <<std::endl;
 		std::cout << flowidhost <<"   Delay   " << stats->second.delaySum.GetSeconds () / stats->second.rxPackets << std::endl;
 		std::cout << flowidhost <<"   LostPackets   " << stats->second.lostPackets << std::endl;
 	}
@@ -88,9 +83,8 @@ int main (int argc, char *argv[])
 {
   uint16_t seed = 1;
   bool verbose = true; //Verbose
-  uint32_t nWifi = 5; //Quantidade de nós WiFi
+  uint32_t nWifi = 1; //Quantidade de nós WiFi
   uint32_t apWifi = 1; //Quantidade de APs
-  bool tracing = false; //PCAP
   bool mobilidade = false; //Mobilidade
   double distance = 10.0; //Distancia entre os nós
   double simTime = 40.0; //Tempo de simulação
@@ -98,12 +92,10 @@ int main (int argc, char *argv[])
 
   CommandLine cmd;
   cmd.AddValue ("seed", "Semente de simulação", seed);
-  cmd.AddValue ("nWifi", "Número de nós CLIENTES", nWifi);
-  cmd.AddValue ("nApWifi", "Número de APs", apWifi);
+  cmd.AddValue ("nWifi", "Número de clientes", nWifi);
   cmd.AddValue ("verbose", "Gerar log das transmissoes", verbose);
-  cmd.AddValue ("tracing", "Ativar rastreio PCAP", tracing);
   cmd.AddValue ("trafego", "(0) UDP, (1) TCP ou (2) para ambos", trafego);
-  cmd.AddValue ("mobilidade", "Ativar mobilidade nos nós clientes", mobilidade);
+  cmd.AddValue ("mobilidade", "(0) Sem mobilidade e (1) Com mobilidade", mobilidade);
   cmd.Parse (argc,argv);
 
 //Seed
@@ -130,8 +122,7 @@ int main (int argc, char *argv[])
   csmaNodes.Add(wifiApNode.Get(0));
   csmaNodes.Create (1);
 
-
-//Cria P2P do Router e AP
+//Cria conexao entre Router e AP
   CsmaHelper csma;
   csma.SetChannelAttribute ("DataRate", StringValue ("100Mbps"));
   csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
@@ -144,7 +135,7 @@ int main (int argc, char *argv[])
   YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
   phy.SetChannel (channel.Create ());
 
-//Algoritmo de controle de de taxa, que neste caso é o AARF
+//Algoritmo de controle de de taxa, que neste caso e o AARF
   WifiHelper wifi;
   wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
   wifi.SetStandard (WIFI_PHY_STANDARD_80211a);
@@ -163,7 +154,7 @@ int main (int argc, char *argv[])
 //Instancia a Mobilidade
   //AP_node
   Ptr<ListPositionAllocator> positionAlloc0 = CreateObject<ListPositionAllocator> ();
-  positionAlloc0->Add (Vector(75, 75, 0)); //(75,75,0)
+  positionAlloc0->Add (Vector(40, 0, 0));
 
   MobilityHelper mobilityAp;
   mobilityAp.SetMobilityModel("ns3::ConstantPositionMobilityModel");
@@ -184,10 +175,10 @@ int main (int argc, char *argv[])
   { 
     MobilityHelper mobilityWifi;
     mobilityWifi.SetPositionAllocator ("ns3::GridPositionAllocator",
-                             "MinX", DoubleValue (50.0),
-                             "MinY", DoubleValue (80.0),
-                             "DeltaX", DoubleValue (distance), //Distancia entre os nós em X
-                             "DeltaY", DoubleValue (distance), //Distancia entre os nós em Y
+                             "MinX", DoubleValue (40.0),
+                             "MinY", DoubleValue (10.0),
+                             "DeltaX", DoubleValue (distance), //Distancia entre os nos em X
+                             "DeltaY", DoubleValue (distance), //Distancia entre os nos em Y
                              "GridWidth", UintegerValue (6),
                              "LayoutType", StringValue ("RowFirst"));
     mobilityWifi.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
@@ -197,18 +188,19 @@ int main (int argc, char *argv[])
   {
   	MobilityHelper mobilityWifi;	  
   	mobilityWifi.SetPositionAllocator ("ns3::GridPositionAllocator",
-                              "MinX", DoubleValue (50.0),
-                              "MinY", DoubleValue (80.0),
-                              "DeltaX", DoubleValue (distance), // ADD * u->GetValue() Distancia entre os nós em X
-                              "DeltaY", DoubleValue (distance), //Distancia entre os nós em Y
+                              "MinX", DoubleValue (40.0),
+                              "MinY", DoubleValue (10.0),
+                              "DeltaX", DoubleValue (distance), //Distancia entre os nos em X
+                              "DeltaY", DoubleValue (distance), //Distancia entre os nos em Y
                               "GridWidth", UintegerValue (6),
-                              "LayoutType", StringValue ("RowFirst")); //Determina se as posições são alocadas primeiro linha ou coluna primeiro.
+                              "LayoutType", StringValue ("RowFirst")); 
     mobilityWifi.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
   	mobilityWifi.Install (wifiStaNodes);
 
+    //Velocidade
     for (uint16_t i = 0; i < nWifi; i++)
     {
-      UpdateVelocity (wifiStaNodes.Get(i));
+      AtualizaVelocidade (wifiStaNodes.Get(i));
     }
   }
 
@@ -219,10 +211,11 @@ int main (int argc, char *argv[])
 
   Ipv4AddressHelper address;
 
+  //Cria endereco para CSMA
   address.SetBase ("10.1.2.0", "255.255.255.0");
   Ipv4InterfaceContainer csmaInterfaces = address.Assign (csmaDevices);
 
-  //Cria endereço para os Clientes
+  //Cria endereco para os Clientes
   address.SetBase ("192.168.0.0", "255.255.255.0");
   Ipv4InterfaceContainer interfacesAp = address.Assign (apDevices);
   Ipv4InterfaceContainer interfacesWifi = address.Assign (staDevices);
@@ -240,6 +233,7 @@ int main (int argc, char *argv[])
       onoff.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
       onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
       onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
+      onoff.SetAttribute ("MaxBytes", UintegerValue (0));
       onoff.SetAttribute ("PacketSize", UintegerValue (478)); // +34 header
 
       ApplicationContainer server = onoff.Install(csmaNodes.Get(1));
@@ -262,19 +256,20 @@ int main (int argc, char *argv[])
       uint16_t m_port = port + i;
 
       OnOffHelper onoff ("ns3::TcpSocketFactory", Address(InetSocketAddress(csmaInterfaces.GetAddress(1), m_port)));
-      onoff.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=1]"));
-      onoff.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0]"));
+      onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), m_port)));
+      onoff.SetAttribute ("OnTime", StringValue("ns3::NormalRandomVariable[Mean=5.|Variance=1.|Bound=10.]"));
+      onoff.SetAttribute ("OffTime", StringValue("ns3::NormalRandomVariable[Mean=7.|Variance=1.|Bound=10.]"));
       onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
+      onoff.SetAttribute ("MaxBytes", UintegerValue (0));
       onoff.SetAttribute ("PacketSize", UintegerValue (1440)); // +60 header
 
-      PacketSinkHelper sink ("ns3::TcpSocketFactory",InetSocketAddress(csmaInterfaces.GetAddress(1), m_port));
-
-      ApplicationContainer server = sink.Install(csmaNodes.Get(1));
+      ApplicationContainer server = onoff.Install(csmaNodes.Get(1));
       server.Start (Seconds (1.0));
       server.Stop (Seconds (simTime));
 
-      ApplicationContainer client;
-      client.Add(onoff.Install (wifiStaNodes.Get(i)));
+      PacketSinkHelper sink ("ns3::TcpSocketFactory", InetSocketAddress(interfacesWifi.GetAddress(i), m_port));
+
+      ApplicationContainer client = sink.Install(wifiStaNodes.Get(i));
       client.Start(Seconds (2.0));
       client.Stop(Seconds (simTime));
       
@@ -283,52 +278,52 @@ int main (int argc, char *argv[])
   }
   else if(trafego == 2)
   {
-  	//Aplicação UDP e TCP - CONSERTAR
+  	//Aplicação UDP e TCP - CONSERTAR AQUI
   	for (uint32_t i = 0; i < wifiStaNodes.GetN(); i++)
   	{
   		if(i % 2 == 0)
   		{
-  			uint16_t udp_port = 9;
-	        uint16_t m_port = udp_port + i;
+        uint16_t udp_port = 9 + i;
 
-          	OnOffHelper onoff ("ns3::UdpSocketFactory", Address(InetSocketAddress(csmaInterfaces.GetAddress(1), m_port)));
-	      	onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), m_port)));
-	      	onoff.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
-	      	onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-	      	onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
-	      	onoff.SetAttribute ("PacketSize", UintegerValue (478)); // +34 header
+        OnOffHelper onoff ("ns3::UdpSocketFactory", Address(InetSocketAddress(csmaInterfaces.GetAddress(1), udp_port)));
+        onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), udp_port)));
+        onoff.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
+        onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
+        onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
+        onoff.SetAttribute ("MaxBytes", UintegerValue (0));
+        onoff.SetAttribute ("PacketSize", UintegerValue (478)); // +34 header
 
-			ApplicationContainer server = onoff.Install(csmaNodes.Get(1));
-			server.Start(Seconds (1.0));
-	      	server.Stop(Seconds (simTime));
+        ApplicationContainer server = onoff.Install(csmaNodes.Get(1));
+        server.Start(Seconds (1.0));
+        server.Stop(Seconds (simTime));
 
-	      	PacketSinkHelper sink ("ns3::UdpSocketFactory", InetSocketAddress(interfacesWifi.GetAddress(i), m_port));
+        PacketSinkHelper sink ("ns3::UdpSocketFactory", InetSocketAddress(interfacesWifi.GetAddress(i), udp_port));
 
-	      	ApplicationContainer client = sink.Install(wifiStaNodes.Get(i));
-	      	client.Start(Seconds (2.0));
-	      	client.Stop(Seconds (simTime));
+        ApplicationContainer client = sink.Install(wifiStaNodes.Get(i));
+        client.Start(Seconds (2.0));
+        client.Stop(Seconds (simTime));
   		}
   		else
   		{
-	        uint16_t tcp_port = 8080;
-	        uint16_t m_port = tcp_port + i;
+        uint16_t tcp_port = 8080 + i;
 
-			OnOffHelper onoff ("ns3::TcpSocketFactory", Address(InetSocketAddress(csmaInterfaces.GetAddress(1), m_port)));
-			onoff.SetAttribute("OnTime", StringValue("ns3::NormalRandomVariable[Mean=5.|Variance=1.|Bound=10.]"));
-			onoff.SetAttribute("OffTime", StringValue("ns3::NormalRandomVariable[Mean=7.|Variance=1.|Bound=10.]"));
-			onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
-			onoff.SetAttribute ("PacketSize", UintegerValue (1440)); // +60 header
+        OnOffHelper onoff ("ns3::TcpSocketFactory", Address(InetSocketAddress(csmaInterfaces.GetAddress(1), tcp_port)));
+        onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), tcp_port)));
+        onoff.SetAttribute ("OnTime", StringValue("ns3::NormalRandomVariable[Mean=5.|Variance=1.|Bound=10.]"));
+        onoff.SetAttribute ("OffTime", StringValue("ns3::NormalRandomVariable[Mean=7.|Variance=1.|Bound=10.]"));
+        onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
+        onoff.SetAttribute ("MaxBytes", UintegerValue (0));
+        onoff.SetAttribute ("PacketSize", UintegerValue (1440)); // +60 header
 
-			PacketSinkHelper sink ("ns3::TcpSocketFactory",InetSocketAddress(csmaInterfaces.GetAddress(1), m_port));
+        ApplicationContainer server = onoff.Install(csmaNodes.Get(1));
+        server.Start (Seconds (1.0));
+        server.Stop (Seconds (simTime));
 
-			ApplicationContainer server = sink.Install(csmaNodes.Get(1));
-			server.Start (Seconds (1.0));
-			server.Stop (Seconds (simTime));
+        PacketSinkHelper sink ("ns3::TcpSocketFactory", InetSocketAddress(interfacesWifi.GetAddress(i), tcp_port));
 
-			ApplicationContainer client;
-			client.Add(onoff.Install (wifiStaNodes.Get(i)));
-			client.Start(Seconds (2.0));
-			client.Stop(Seconds (simTime));
+        ApplicationContainer client = sink.Install(wifiStaNodes.Get(i));
+        client.Start(Seconds (2.0));
+        client.Stop(Seconds (simTime));
   		}
   	}
   }
@@ -340,38 +335,33 @@ int main (int argc, char *argv[])
   FlowMonitorHelper fmhelper;
   monitor = fmhelper.InstallAll();
 
-  if (tracing == true)
-  {
-  	phy.EnablePcap ("resultados/gerencia_ap_trace", apDevices.Get (0));
-  }
-
 //NetAnim
   if (trafego == 0)
   {
   	AnimationInterface anim ("Gerencia2018_UDP_anim.xml");
-	anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
-	anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
-	anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
-	anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
-	anim.EnablePacketMetadata ();
+  	anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
+  	anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
+  	anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
+  	anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
+  	//anim.EnablePacketMetadata ();
   }
   else if(trafego == 1)
   {
   	AnimationInterface anim ("Gerencia2018_TCP_anim.xml");
-	anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
-	anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
-	anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
-	anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
-	anim.EnablePacketMetadata ();
+  	anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
+  	anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
+  	anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
+  	anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
+  	//anim.EnablePacketMetadata ();
   }
   else
   {
   	AnimationInterface anim ("Gerencia2018_UDP-TCP_anim.xml");
-	anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
-	anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
-	anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
-	anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
-	anim.EnablePacketMetadata ();
+  	anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
+  	anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
+  	anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
+  	anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
+  	//anim.EnablePacketMetadata ();
   } 
 
   Simulator::Stop (Seconds (simTime));
