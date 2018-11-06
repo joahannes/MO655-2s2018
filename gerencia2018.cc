@@ -46,26 +46,26 @@ void AtualizaVelocidade(Ptr<Node> node) {
     double velocidade = rvar->GetValue(2, 3); // 7.2 a 10.8 km/h
     mobility->SetVelocity (Vector (velocidade, 0.0, 0.0));
 
-    Simulator::Schedule (Seconds (1), AtualizaVelocidade, node);
+    Simulator::Schedule (Seconds (0.5), AtualizaVelocidade, node);
 }
 
 void ImprimeMetricas (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, int trafego, int clientes){
-  double totalThroughput = 0.0;
-  monitor->CheckForLostPackets(); 
-  std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats();
-  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier());
+	double totalThroughput = 0.0;
+	monitor->CheckForLostPackets();
+	std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats();
+	Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier());
 
 	for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator stats = flowStats.begin (); stats != flowStats.end (); ++stats)
 	{
 		Ipv4FlowClassifier::FiveTuple fiveTuple = classifier->FindFlow (stats->first);
-    std::string flowidhost = "FlowID[" + std::to_string(stats->first) + "]";
-		
-    if(trafego == 0)
-      std::cout << flowidhost <<"   Trafego   UDP" << std::endl;
+		std::string flowidhost = "FlowID[" + std::to_string(stats->first) + "]";
+
+		if(trafego == 0)
+			std::cout << flowidhost <<"   Trafego   UDP" << std::endl;
 		else if(trafego == 1)
-      std::cout << flowidhost <<"   Trafego   TCP" << std::endl;
+			std::cout << flowidhost <<"   Trafego   TCP" << std::endl;
 		else if(trafego == 2)
-      std::cout << flowidhost <<"   Trafego   UDP/TCP" << std::endl;
+			std::cout << flowidhost <<"   Trafego   UDP/TCP" << std::endl;
 
 		std::cout << flowidhost <<"   Clientes   " << clientes << std::endl; 
 		std::cout << flowidhost <<"   Flow   "<< fiveTuple.sourceAddress <<" -----> "<<fiveTuple.destinationAddress<<std::endl;
@@ -86,14 +86,13 @@ int main (int argc, char *argv[])
   uint32_t nWifi = 1; //Quantidade de nós WiFi
   uint32_t apWifi = 1; //Quantidade de APs
   bool mobilidade = false; //Mobilidade
-  double distance = 10.0; //Distancia entre os nós
-  double simTime = 40.0; //Tempo de simulação
+  double distance = 5.0; //Distancia entre os nós
+  double simTime = 60.0; //Tempo de simulação
   int trafego = 0;
 
   CommandLine cmd;
   cmd.AddValue ("seed", "Semente de simulação", seed);
   cmd.AddValue ("nWifi", "Número de clientes", nWifi);
-  cmd.AddValue ("verbose", "Gerar log das transmissoes", verbose);
   cmd.AddValue ("trafego", "(0) UDP, (1) TCP ou (2) para ambos", trafego);
   cmd.AddValue ("mobilidade", "(0) Sem mobilidade e (1) Com mobilidade", mobilidade);
   cmd.Parse (argc,argv);
@@ -154,7 +153,7 @@ int main (int argc, char *argv[])
 //Instancia a Mobilidade
   //AP_node
   Ptr<ListPositionAllocator> positionAlloc0 = CreateObject<ListPositionAllocator> ();
-  positionAlloc0->Add (Vector(40, 0, 0));
+  positionAlloc0->Add (Vector(75, 75, 0));
 
   MobilityHelper mobilityAp;
   mobilityAp.SetMobilityModel("ns3::ConstantPositionMobilityModel");
@@ -175,8 +174,8 @@ int main (int argc, char *argv[])
   { 
     MobilityHelper mobilityWifi;
     mobilityWifi.SetPositionAllocator ("ns3::GridPositionAllocator",
-                             "MinX", DoubleValue (40.0),
-                             "MinY", DoubleValue (10.0),
+                             "MinX", DoubleValue (75.0),
+                             "MinY", DoubleValue (75.0),
                              "DeltaX", DoubleValue (distance), //Distancia entre os nos em X
                              "DeltaY", DoubleValue (distance), //Distancia entre os nos em Y
                              "GridWidth", UintegerValue (6),
@@ -188,14 +187,14 @@ int main (int argc, char *argv[])
   {
   	MobilityHelper mobilityWifi;	  
   	mobilityWifi.SetPositionAllocator ("ns3::GridPositionAllocator",
-                              "MinX", DoubleValue (40.0),
-                              "MinY", DoubleValue (10.0),
+                              "MinX", DoubleValue (75.0),
+                              "MinY", DoubleValue (75.0),
                               "DeltaX", DoubleValue (distance), //Distancia entre os nos em X
                               "DeltaY", DoubleValue (distance), //Distancia entre os nos em Y
                               "GridWidth", UintegerValue (6),
                               "LayoutType", StringValue ("RowFirst")); 
     mobilityWifi.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
-  	mobilityWifi.Install (wifiStaNodes);
+    mobilityWifi.Install (wifiStaNodes);
 
     //Velocidade
     for (uint16_t i = 0; i < nWifi; i++)
@@ -232,9 +231,8 @@ int main (int argc, char *argv[])
       onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), m_port)));
       onoff.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
       onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-      onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
-      onoff.SetAttribute ("MaxBytes", UintegerValue (0));
-      onoff.SetAttribute ("PacketSize", UintegerValue (478)); // +34 header
+      onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("1Mbps")));
+      onoff.SetAttribute ("PacketSize", UintegerValue (450)); // +34 header
 
       ApplicationContainer server = onoff.Install(csmaNodes.Get(1));
       server.Start(Seconds (1.0));
@@ -249,7 +247,7 @@ int main (int argc, char *argv[])
   }
   else if(trafego == 1)
   {
-    //Aplicacao TCP
+        //Aplicacao TCP
     uint16_t port = 8080;
     for (uint32_t i = 0; i < wifiStaNodes.GetN(); i++)
     {
@@ -259,9 +257,8 @@ int main (int argc, char *argv[])
       onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), m_port)));
       onoff.SetAttribute ("OnTime", StringValue("ns3::NormalRandomVariable[Mean=5.|Variance=1.|Bound=10.]"));
       onoff.SetAttribute ("OffTime", StringValue("ns3::NormalRandomVariable[Mean=7.|Variance=1.|Bound=10.]"));
-      onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
-      onoff.SetAttribute ("MaxBytes", UintegerValue (0));
-      onoff.SetAttribute ("PacketSize", UintegerValue (1440)); // +60 header
+      onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("1Mbps")));
+      onoff.SetAttribute ("PacketSize", UintegerValue (1426)); // +60 header
 
       ApplicationContainer server = onoff.Install(csmaNodes.Get(1));
       server.Start (Seconds (1.0));
@@ -278,52 +275,51 @@ int main (int argc, char *argv[])
   }
   else if(trafego == 2)
   {
-  	//Aplicação UDP e TCP - CONSERTAR AQUI
+  	//Aplicação UDP e TCP
   	for (uint32_t i = 0; i < wifiStaNodes.GetN(); i++)
   	{
+  		uint32_t udp_port = 9;
+  		uint32_t tcp_port = 8080;
+
   		if(i % 2 == 0)
   		{
-        uint16_t udp_port = 9 + i;
+  			//Aplicacao UDP
+			OnOffHelper onoff ("ns3::UdpSocketFactory", Address(InetSocketAddress(csmaInterfaces.GetAddress(1), udp_port+i)));
+			onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), udp_port+i)));
+			onoff.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
+			onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
+			onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("1Mbps")));
+			onoff.SetAttribute ("PacketSize", UintegerValue (478)); // +34 header
 
-        OnOffHelper onoff ("ns3::UdpSocketFactory", Address(InetSocketAddress(csmaInterfaces.GetAddress(1), udp_port)));
-        onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), udp_port)));
-        onoff.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
-        onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-        onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
-        onoff.SetAttribute ("MaxBytes", UintegerValue (0));
-        onoff.SetAttribute ("PacketSize", UintegerValue (478)); // +34 header
+			ApplicationContainer server = onoff.Install(csmaNodes.Get(1));
+			server.Start(Seconds (1.0));
+			server.Stop(Seconds (simTime));
 
-        ApplicationContainer server = onoff.Install(csmaNodes.Get(1));
-        server.Start(Seconds (1.0));
-        server.Stop(Seconds (simTime));
+			PacketSinkHelper sink ("ns3::UdpSocketFactory", InetSocketAddress(interfacesWifi.GetAddress(i), udp_port+i));
 
-        PacketSinkHelper sink ("ns3::UdpSocketFactory", InetSocketAddress(interfacesWifi.GetAddress(i), udp_port));
-
-        ApplicationContainer client = sink.Install(wifiStaNodes.Get(i));
-        client.Start(Seconds (2.0));
-        client.Stop(Seconds (simTime));
-  		}
+			ApplicationContainer client = sink.Install(wifiStaNodes.Get(i));
+			client.Start(Seconds (2.0));
+			client.Stop(Seconds (simTime));
+		}
   		else
   		{
-        uint16_t tcp_port = 8080 + i;
+			//Aplicacao TCP
+			OnOffHelper onoff ("ns3::TcpSocketFactory", Address(InetSocketAddress(csmaInterfaces.GetAddress(1), tcp_port+i)));
+			onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), tcp_port+i)));
+			onoff.SetAttribute ("OnTime", StringValue("ns3::NormalRandomVariable[Mean=5.|Variance=1.|Bound=10.]"));
+			onoff.SetAttribute ("OffTime", StringValue("ns3::NormalRandomVariable[Mean=7.|Variance=1.|Bound=10.]"));
+			onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("1Mbps")));
+			onoff.SetAttribute ("PacketSize", UintegerValue (1440)); // +60 header
 
-        OnOffHelper onoff ("ns3::TcpSocketFactory", Address(InetSocketAddress(csmaInterfaces.GetAddress(1), tcp_port)));
-        onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), tcp_port)));
-        onoff.SetAttribute ("OnTime", StringValue("ns3::NormalRandomVariable[Mean=5.|Variance=1.|Bound=10.]"));
-        onoff.SetAttribute ("OffTime", StringValue("ns3::NormalRandomVariable[Mean=7.|Variance=1.|Bound=10.]"));
-        onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
-        onoff.SetAttribute ("MaxBytes", UintegerValue (0));
-        onoff.SetAttribute ("PacketSize", UintegerValue (1440)); // +60 header
+			ApplicationContainer server = onoff.Install(csmaNodes.Get(1));
+			server.Start (Seconds (1.0));
+			server.Stop (Seconds (simTime));
 
-        ApplicationContainer server = onoff.Install(csmaNodes.Get(1));
-        server.Start (Seconds (1.0));
-        server.Stop (Seconds (simTime));
+			PacketSinkHelper sink ("ns3::TcpSocketFactory", InetSocketAddress(interfacesWifi.GetAddress(i), tcp_port+i));
 
-        PacketSinkHelper sink ("ns3::TcpSocketFactory", InetSocketAddress(interfacesWifi.GetAddress(i), tcp_port));
-
-        ApplicationContainer client = sink.Install(wifiStaNodes.Get(i));
-        client.Start(Seconds (2.0));
-        client.Stop(Seconds (simTime));
+			ApplicationContainer client = sink.Install(wifiStaNodes.Get(i));
+			client.Start(Seconds (2.0));
+			client.Stop(Seconds (simTime));
   		}
   	}
   }
@@ -335,34 +331,16 @@ int main (int argc, char *argv[])
   FlowMonitorHelper fmhelper;
   monitor = fmhelper.InstallAll();
 
-//NetAnim
-  if (trafego == 0)
-  {
-  	AnimationInterface anim ("Gerencia2018_UDP_anim.xml");
-  	anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
-  	anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
-  	anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
-  	anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
-  	//anim.EnablePacketMetadata ();
-  }
-  else if(trafego == 1)
-  {
-  	AnimationInterface anim ("Gerencia2018_TCP_anim.xml");
-  	anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
-  	anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
-  	anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
-  	anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
-  	//anim.EnablePacketMetadata ();
-  }
-  else
-  {
-  	AnimationInterface anim ("Gerencia2018_UDP-TCP_anim.xml");
-  	anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
-  	anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
-  	anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
-  	anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
-  	//anim.EnablePacketMetadata ();
-  } 
+  // //NetAnim
+  //   if (trafego == 0)
+  //   {
+  // 	 AnimationInterface anim ("Gerencia2018_UDP_anim.xml");
+  // 	 anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
+  // 	 anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
+  // 	 anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
+  // 	 anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
+  // 	 //anim.EnablePacketMetadata ();
+  //   }
 
   Simulator::Stop (Seconds (simTime));
   Simulator::Run ();
