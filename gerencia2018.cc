@@ -137,7 +137,6 @@ int main (int argc, char *argv[])
 //Algoritmo de controle de de taxa, que neste caso e o AARF
   WifiHelper wifi;
   wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211a);
 
   WifiMacHelper mac;
 
@@ -153,7 +152,7 @@ int main (int argc, char *argv[])
 //Instancia a Mobilidade
   //AP_node
   Ptr<ListPositionAllocator> positionAlloc0 = CreateObject<ListPositionAllocator> ();
-  positionAlloc0->Add (Vector(75, 75, 0));
+  positionAlloc0->Add (Vector(70, 70, 0));
 
   MobilityHelper mobilityAp;
   mobilityAp.SetMobilityModel("ns3::ConstantPositionMobilityModel");
@@ -174,11 +173,11 @@ int main (int argc, char *argv[])
   { 
     MobilityHelper mobilityWifi;
     mobilityWifi.SetPositionAllocator ("ns3::GridPositionAllocator",
-                             "MinX", DoubleValue (75.0),
-                             "MinY", DoubleValue (75.0),
+                             "MinX", DoubleValue (70.0),
+                             "MinY", DoubleValue (70.0),
                              "DeltaX", DoubleValue (distance), //Distancia entre os nos em X
                              "DeltaY", DoubleValue (distance), //Distancia entre os nos em Y
-                             "GridWidth", UintegerValue (6),
+                             "GridWidth", UintegerValue (3),
                              "LayoutType", StringValue ("RowFirst"));
     mobilityWifi.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
     mobilityWifi.Install (wifiStaNodes);
@@ -187,11 +186,11 @@ int main (int argc, char *argv[])
   {
   	MobilityHelper mobilityWifi;	  
   	mobilityWifi.SetPositionAllocator ("ns3::GridPositionAllocator",
-                              "MinX", DoubleValue (75.0),
-                              "MinY", DoubleValue (75.0),
+                              "MinX", DoubleValue (70.0),
+                              "MinY", DoubleValue (70.0),
                               "DeltaX", DoubleValue (distance), //Distancia entre os nos em X
                               "DeltaY", DoubleValue (distance), //Distancia entre os nos em Y
-                              "GridWidth", UintegerValue (6),
+                              "GridWidth", UintegerValue (3),
                               "LayoutType", StringValue ("RowFirst")); 
     mobilityWifi.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
     mobilityWifi.Install (wifiStaNodes);
@@ -231,8 +230,8 @@ int main (int argc, char *argv[])
       onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), m_port)));
       onoff.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
       onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-      onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("1Mbps")));
-      onoff.SetAttribute ("PacketSize", UintegerValue (450)); // +34 header
+      onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
+      onoff.SetAttribute ("PacketSize", UintegerValue (478)); // +34 header
 
       ApplicationContainer server = onoff.Install(csmaNodes.Get(1));
       server.Start(Seconds (1.0));
@@ -257,8 +256,8 @@ int main (int argc, char *argv[])
       onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), m_port)));
       onoff.SetAttribute ("OnTime", StringValue("ns3::NormalRandomVariable[Mean=5.|Variance=1.|Bound=10.]"));
       onoff.SetAttribute ("OffTime", StringValue("ns3::NormalRandomVariable[Mean=7.|Variance=1.|Bound=10.]"));
-      onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("1Mbps")));
-      onoff.SetAttribute ("PacketSize", UintegerValue (1426)); // +60 header
+      onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
+      onoff.SetAttribute ("PacketSize", UintegerValue (1440)); // +60 header
 
       ApplicationContainer server = onoff.Install(csmaNodes.Get(1));
       server.Start (Seconds (1.0));
@@ -288,7 +287,7 @@ int main (int argc, char *argv[])
 			onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), udp_port+i)));
 			onoff.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
 			onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-			onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("1Mbps")));
+			onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
 			onoff.SetAttribute ("PacketSize", UintegerValue (478)); // +34 header
 
 			ApplicationContainer server = onoff.Install(csmaNodes.Get(1));
@@ -308,7 +307,7 @@ int main (int argc, char *argv[])
 			onoff.SetAttribute ("Remote",  AddressValue(InetSocketAddress(interfacesWifi.GetAddress(i), tcp_port+i)));
 			onoff.SetAttribute ("OnTime", StringValue("ns3::NormalRandomVariable[Mean=5.|Variance=1.|Bound=10.]"));
 			onoff.SetAttribute ("OffTime", StringValue("ns3::NormalRandomVariable[Mean=7.|Variance=1.|Bound=10.]"));
-			onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("1Mbps")));
+			onoff.SetAttribute ("DataRate", DataRateValue ( DataRate ("512kbps")));
 			onoff.SetAttribute ("PacketSize", UintegerValue (1440)); // +60 header
 
 			ApplicationContainer server = onoff.Install(csmaNodes.Get(1));
