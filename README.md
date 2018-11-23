@@ -26,16 +26,10 @@ Processar os arquivos "results-x.txt" gerados:
 * Alterar variavel "mobilidade" para "mov" quando processar o cenário com mobilidade ou "est" para o cenário sem mobilidade. 
 Formato do arquivo "summary" de saída:
 
-0	1	1	0.51693	0.0021522	0	7899
-1	1	1	0.51693	0.00215035	0	7899
-2	1	1	0.51693	0.00214993	0	7899
-3	1	1	0.51693	0.00215102	0	7899
-4	1	1	0.51693	0.00215222	0	7899
-5	1	1	0.51693	0.00215034	0	7899
-6	1	1	0.51693	0.00215208	0	7899
-7	1	1	0.51693	0.00214983	0	7899
-8	1	1	0.51693	0.00215074	0	7899
-9	1	1	0.51693	0.00215382	0	7899
+| Replicacao | Host | Clientes | Vazao | Delay | Perdidos | Transmitidos |
+| ---------- | ---- | -------- | ----- | ----- | -------- | ------------ |
+|    0	     |  1   |    1     | 0.51693 | 0.0021522 | 0 | 7899 |
+|    1	     |  1   |	 1     | 0.51693 | 0.0021503 | 0 | 7899 |
 
 
 Plotar os graficos (para os cenários com e sem mobilidade):
