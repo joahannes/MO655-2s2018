@@ -2,13 +2,13 @@
 
 import os
 
-TRAFFICS = (1, 2, 4, 6)
-ALGORITHMS = ("UDP","TCP") # DEIXAR AUTOMATICO NA LEITURA
+TRAFFICS = (1, 2, 4, 6, 12, 24, 48)
+ALGORITHMS = ("UDP","TCP","AMBOS") # DEIXAR AUTOMATICO NA LEITURA
 mobilidade = "est" #DEIXAR AUTOMATICO NA LEITURA
 
 REPLICATIONS = 33
 
-# (0) Replication, (1) Host, (2) Clientes, (3) Vazao, (4) Delay, (5) Perdidos
+# (0) Replication, (1) Host, (2) Clientes, (3) Vazao, (4) Delay, (5) Perdidos, (6) Transmitidos
 
 def build_summary_files():
 
@@ -43,11 +43,11 @@ def build_summary_files():
 						#LostPackets
 						if "LostPackets" in line:
 							lostpackets = line_splited[2]
-							summary_file.write(lostpackets + "\n")
-						# #Jitter
-						# if "Jitter" in line:
-						# 	jitter = line_splited[2]
-						# 	summary_file.write(jitter + "\n")
+							summary_file.write(lostpackets + "\t")
+						#txPackets
+						if "txPackets" in line:
+							txPackets = line_splited[2]
+							summary_file.write(txPackets + "\n")
 
 					line = result_file.readline()
 				result_file.close()
