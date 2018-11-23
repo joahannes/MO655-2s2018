@@ -22,7 +22,7 @@ formato = '.eps'
 
 LEGEND = ("CBR", "Rajada", "CBR/Rajada")
 
-# (0) Replication, (1) Host, (2) Clientes, (3) Vazao, (4) Delay, (5) Perdidos
+# (0) Replication, (1) Host, (2) Clientes, (3) Vazao, (4) Delay, (5) Perdidos, (6) Transmitidos
 
 #CONFIDENCE INTERVAL - BAR ERROR
 def confidence_interval(values):
