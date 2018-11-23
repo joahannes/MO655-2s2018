@@ -23,8 +23,7 @@ Processar os arquivos "results-x.txt" gerados:
 
 	$ python process_gerencia.py
 	
-* Alterar variavel "mobilidade" para "mov" quando processar o cenário com mobilidade ou "est" para o cenário sem mobilidade. 
-Formato do arquivo "summary" de saída:
+* Alterar variavel "mobilidade" para "mov" quando processar o cenário com mobilidade ou "est" para o cenário sem mobilidade. Ao final será gerado um arquivo chamado "summary-x" para cada cenário, esse arquivo tem o formato abaixo:
 
 | Replicacao | Host | Clientes | Vazao | Delay | Perdidos | Transmitidos |
 | ---------- | ---- | -------- | ----- | ----- | -------- | ------------ |
