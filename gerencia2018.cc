@@ -43,7 +43,7 @@ void AtualizaVelocidade(Ptr<Node> node) {
     Ptr<UniformRandomVariable> rvar = CreateObject<UniformRandomVariable>();
     Ptr <ConstantVelocityMobilityModel> mobility = node -> GetObject<ConstantVelocityMobilityModel>();
     
-    double velocidade = rvar->GetValue(2, 3); // 7.2 a 10.8 km/h
+    double velocidade = rvar->GetValue(1, 2); // 3.6 a 7.2 km/h
     mobility->SetVelocity (Vector (velocidade, 0.0, 0.0));
 
     Simulator::Schedule (Seconds (0.5), AtualizaVelocidade, node);
@@ -329,17 +329,6 @@ int main (int argc, char *argv[])
   Ptr<FlowMonitor> monitor;
   FlowMonitorHelper fmhelper;
   monitor = fmhelper.InstallAll();
-
-  // //NetAnim
-  //   if (trafego == 0)
-  //   {
-  // 	 AnimationInterface anim ("Gerencia2018_UDP_anim.xml");
-  // 	 anim.UpdateNodeDescription (wifiApNode.Get (0), "AP");
-  // 	 anim.UpdateNodeColor (wifiApNode.Get (0), 0, 255, 0);
-  // 	 anim.UpdateNodeDescription (csmaNodes.Get (1), "ROUTER");
-  // 	 anim.UpdateNodeColor (csmaNodes.Get (1), 0, 0, 0);
-  // 	 //anim.EnablePacketMetadata ();
-  //   }
 
   Simulator::Stop (Seconds (simTime));
   Simulator::Run ();
