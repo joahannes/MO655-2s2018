@@ -15,13 +15,15 @@ O script "run_all.sh" chama o "run_gerencia.sh" que conta com os parâmetros see
 
 	$ ./run_gerencia.sh 33 5 0 0
 	
-* Onde 33 é o número de seeds, 5 é o número de clientes e 0 o tráfego (0 = UDP, 1 = TCP e 2 = UDP/TCP) e 0 a mobilidade (0 = Sem e 1 = Com).
+* Onde 33 é o número de seeds, 5 é o número de clientes, 0 o tráfego (0 = UDP, 1 = TCP e 2 = UDP/TCP) e 0 a mobilidade (0 = Sem e 1 = Com).
 
 ### Executando os scripts ###
 
 Processar os arquivos "results-x.txt" gerados:
 
 	$ python process_gerencia.py
+	
+* Alterar variavel "mobilidade" para "mov" quando processar o cenário com mobilidade ou "est" para o cenário sem mobilidade. 
 
 Plotar os graficos (para os cenários com e sem mobilidade):
 
